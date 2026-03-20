@@ -6,6 +6,7 @@ import { AlertCircle, TrendingUp, TrendingDown, Target } from "lucide-react";
 import { DCFView } from "@/components/DCFView";
 import { CCAView } from "@/components/CCAView";
 import { MonteCarloView } from "@/components/MonteCarloView";
+import { ReverseDCFView } from "@/components/ReverseDCFView";
 
 export default function Home() {
   const { valuationData, isLoading, error } = useValuation();
@@ -29,7 +30,7 @@ export default function Home() {
         <div className={`w-full transition-all duration-700 ${valuationData ? 'max-w-xl mx-0 mb-12' : 'max-w-2xl text-center'}`}>
           {!valuationData && (
             <div className="mb-12 space-y-4">
-              <h2 className="text-5xl lg:text-7xl font-bold tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-white/50">
+              <h2 className="text-5xl lg:text-7xl font-bold tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-white/50 leading-[1.05] pb-1">
                 Institutional-Grade<br />Valuation Engine
               </h2>
               <p className="text-lg text-white/40 max-w-lg mx-auto">
@@ -104,6 +105,10 @@ export default function Home() {
                {valuationData.cca && <CCAView cca={valuationData.cca} currentPrice={valuationData.current_price} />}
                {valuationData.monte_carlo && <MonteCarloView monteCarlo={valuationData.monte_carlo} currentPrice={valuationData.current_price} />}
             </div>
+
+            {valuationData.market_implied && (
+              <ReverseDCFView marketImplied={valuationData.market_implied} />
+            )}
             
           </div>
         )}

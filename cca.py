@@ -5,13 +5,18 @@ import yfinance as yf
 from openpyxl import load_workbook
 import json
 import logging
+import os
 from data import load_company_data
 from utils import pull_info, fill_excel_cca, safe_iloc0, get_weights
 from data import API_KEY
 
 
-def find_peers(ticker_symbol, sector, industry, target_ev=None, universe_path="sp500_universe.json", num_peers=15):
+def find_peers(ticker_symbol, sector, industry, target_ev=None, universe_path=None, num_peers=15):
     """Filter universe for candidates and rank by size proximity (Enterprise Value) before fetching fresh data."""
+    if universe_path is None:
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        universe_path = os.path.join(base_dir, "sp500_universe.json")
+
     try:
         with open(universe_path, "r") as f:
             universe = json.load(f)
@@ -69,7 +74,7 @@ def get_peer_stats(tickers, fast_mode=False):
                 # Valuation mode: Full fallback chain for accuracy. Favor TTM (info) for multiples consistency.
                 revenue = y_info.get("totalRevenue")
                 ebitda = y_info.get("ebitda")
-                net_income = y_info.get("netIncome")
+                net_income = y_info.get("netIncome") or y_info.get("netIncomeToCommon")
 
                 income = company_data.get("income")
                 if income is not None and not income.empty:
@@ -122,7 +127,7 @@ def get_peer_stats(tickers, fast_mode=False):
                 "ebitda": ebitda,
                 "net_income": net_income,
                 "ev": ev,
-                "pe": pe,
+                "pe": pe or (ev / net_income if ev and net_income and net_income > 0 else None),
                 "peg": peg,
                 "eps_growth": eps_growth,
                 "rev_growth": rev_growth,
@@ -160,7 +165,7 @@ def run_cca(stock, export_excel: bool = True, silent: bool = False) -> tuple[flo
         income.loc["Total Revenue"]) if "Total Revenue" in income.index else None)
     target_ebitda = info.get("ebitda") or (safe_iloc0(
         income.loc["EBITDA"]) if "EBITDA" in income.index else None)
-    target_ni = info.get("netIncome") or (safe_iloc0(
+    target_ni = info.get("netIncome") or info.get("netIncomeToCommon") or (safe_iloc0(
         income.loc["Net Income"]) if "Net Income" in income.index else None)
     target_ev = info.get("enterpriseValue") or info.get("marketCap")
     target_rev_growth = info.get("revenueGrowth")

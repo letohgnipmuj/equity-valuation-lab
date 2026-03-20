@@ -49,7 +49,7 @@ export function DCFView({ dcf, currentPrice }: DCFViewProps) {
       },
       grid: {
         top: 30,
-        bottom: 40,
+        bottom: 70,
         left: 60,
         right: 20
       },
@@ -79,7 +79,7 @@ export function DCFView({ dcf, currentPrice }: DCFViewProps) {
         calculable: true,
         orient: 'horizontal',
         left: 'center',
-        bottom: -5,
+        bottom: -35,
         inRange: {
           color: ['rgba(255,0,0,0.4)', 'rgba(50,50,50,0.6)', 'rgba(0,255,100,0.4)']
         },
@@ -147,7 +147,7 @@ export function DCFView({ dcf, currentPrice }: DCFViewProps) {
         )}
       </div>
 
-      <div className="glass p-6 rounded-2xl border-white/5 h-full min-h-[400px] flex flex-col">
+      <div className="glass p-6 rounded-2xl border-white/5 h-full min-h-[450px] flex flex-col">
         <h4 className="text-sm font-semibold tracking-wider text-white/40 uppercase mb-6 text-center">Sensitivity Matrix</h4>
         
         {chartOptions ? (

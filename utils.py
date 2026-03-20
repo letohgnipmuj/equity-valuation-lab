@@ -60,27 +60,30 @@ def compute_sales_to_capital(
     Computes the marginal Sales-to-Capital ratio using a multi-year window (up to 5 transitions).
     Formula: Total Delta Revenue / Total Net Reinvestment (Capex - Depreciation).
     """
-    n_hist = min(len(revenue_clean), len(capex_series), len(dep_series_clean), 6)
+    n_hist = min(len(revenue_clean), len(
+        capex_series), len(dep_series_clean), 6)
     if n_hist >= 2:
         hist_rev = revenue_clean.iloc[:n_hist].values.astype(float)
         hist_capex = capex_series.iloc[:n_hist].values.astype(float)
         hist_dep = dep_series_clean.iloc[:n_hist].values.astype(float)
-        
+
         # Growth over the period
         total_delta_rev = hist_rev[0] - hist_rev[n_hist - 1]
-        
-        # Reinvestment required for that growth: years [0, n_hist-2] 
-        total_net_capex = np.sum(hist_capex[:n_hist - 1] - hist_dep[:n_hist - 1])
-        
+
+        # Reinvestment required for that growth: years [0, n_hist-2]
+        total_net_capex = np.sum(
+            hist_capex[:n_hist - 1] - hist_dep[:n_hist - 1])
+
         if total_net_capex > 0 and total_delta_rev > 0:
             return float(total_delta_rev / total_net_capex)
 
     # Fallback 1: Total Sales / Net PPE (Asset Productivity)
     ppe_series = get_yf_item(balance, "net ppe")
-    last_ppe = float(ppe_series.iloc[0]) if ppe_series is not None and not ppe_series.empty else 0
+    last_ppe = float(
+        ppe_series.iloc[0]) if ppe_series is not None and not ppe_series.empty else 0
     if last_ppe > 0:
         return last_revenue / last_ppe
-    
+
     # Fallback 2: Sales / Gross Capex
     return last_revenue / max(last_capex, 1.0)
 
@@ -158,20 +161,19 @@ def safe_iloc0(series):
     return None
 
 
-
-def get_weights(implied_prices, temperature = 1.0):
+def get_weights(implied_prices, temperature=1.0):
     data = np.array(implied_prices)
     mean = np.mean(data)
     std = np.std(data)
-    
+
     if std == 0:
         return np.ones(len(data)) / len(data)
-    
+
     scaled_distances = -np.abs(data - mean) / (std * temperature)
-    
+
     exp_scores = np.exp(scaled_distances)
     weights = exp_scores / np.sum(exp_scores)
-    
+
     return weights
 
 
@@ -218,7 +220,8 @@ def get_wacc(
         w_d = D / (E + D)
 
     r_e = r_f + long_beta * equity_risk_premium
-    r_d_pre_tax = abs(interest_expense) / float(total_debt) if total_debt else 0.05
+    r_d_pre_tax = abs(interest_expense) / \
+        float(total_debt) if total_debt else 0.05
     r_d_pre_tax = max(r_d_pre_tax, r_f)
     r_d_after_tax = r_d_pre_tax * (1 - tax_rate)
 
@@ -247,20 +250,28 @@ def revenue_growth_schedule(
     # ── Historical CAGR anchor ────────────────────────────────────────────
     hist_cagr = 0.08  # sensible default
     if income is not None and not income.empty and "Total Revenue" in income.index:
-        hist_rev = income.loc["Total Revenue"].dropna().sort_index(ascending=False)
+        hist_rev = income.loc["Total Revenue"].dropna(
+        ).sort_index(ascending=False)
         if len(hist_rev) >= 2:
             r_recent = float(hist_rev.iloc[0])
             r_oldest = float(hist_rev.iloc[-1])
             n = len(hist_rev) - 1
             if r_oldest > 0 and n > 0:
-                hist_cagr = float(np.clip((r_recent / r_oldest) ** (1 / n) - 1, -0.20, 0.60))
+                hist_cagr = float(
+                    np.clip((r_recent / r_oldest) ** (1 / n) - 1, -0.20, 0.60))
 
     df = pd.DataFrame(estimates)
 
-    # ── No analyst data: fade hist CAGR linearly to TGR ──────────────────
+    def exp_fade(g0, g_terminal, years, k=0.1):
+        t = np.arange(years)
+        return g_terminal + (g0 - g_terminal) * np.exp(-k * t)
+
+    # ── No analyst data: fade hist CAGR to TGR with a healthy minimum floor
     if df.empty or "revenueAvg" not in df.columns:
         start = float(np.clip(hist_cagr, terminal_growth, 0.60))
-        return np.linspace(start, terminal_growth, projection_years)
+        fallback_min_growth = max(terminal_growth, 0.05)
+        start = max(start, fallback_min_growth)
+        return exp_fade(start, terminal_growth, projection_years)
 
     df["date"] = pd.to_datetime(df["date"])
     df["year"] = df["date"].dt.year
@@ -271,7 +282,9 @@ def revenue_growth_schedule(
 
     if len(df_future) < 2:
         start = float(np.clip(hist_cagr, terminal_growth, 0.60))
-        return np.linspace(start, terminal_growth, projection_years)
+        fallback_min_growth = max(terminal_growth, 0.05)
+        start = max(start, fallback_min_growth)
+        return exp_fade(start, terminal_growth, projection_years)
 
     rev_fwd = df_future["revenueAvg"].astype(float).values
     analyst_raw = np.clip((rev_fwd[1:] / rev_fwd[:-1]) - 1, -0.20, 0.80)
@@ -283,8 +296,9 @@ def revenue_growth_schedule(
     remaining = projection_years - len(analyst_years)
 
     if remaining > 0:
-        last_rate = float(np.clip(analyst_years[-1], terminal_growth, max(hist_cagr, 0.15)))
-        fade = np.linspace(last_rate, terminal_growth, remaining + 2)[1:-1]
+        last_rate = float(
+            np.clip(analyst_years[-1], terminal_growth, min(hist_cagr, 0.25)))
+        fade = exp_fade(last_rate, terminal_growth, remaining + 2)[1:-1]
         analyst_years.extend(fade.tolist())
 
     return np.array(analyst_years[:projection_years], dtype=float)
@@ -345,7 +359,8 @@ def dynamic_terminal_growth(
     change_nwc = safe_float(change_nwc)
 
     nopat = ebit * (1 - tax_rate)
-    roic = calculate_roic(ebit, tax_rate, total_assets, cash, current_liabilities, short_term_debt)
+    roic = calculate_roic(ebit, tax_rate, total_assets,
+                          cash, current_liabilities, short_term_debt)
 
     reinvestment = capex + change_nwc
     reinvestment_rate = reinvestment / nopat if nopat > 0 else 0.0
@@ -357,7 +372,9 @@ def dynamic_terminal_growth(
     if roic < discount_rate:
         actual_cap = min(cap, 0.02)
 
-    dynamic_floor = max(floor, 0.1 * g_theoretical)
+    # Enforce a practical floor for terminal growth in healthy companies to avoid overly conservative 1% assumptions
+    min_terminal_floor = max(floor, 0.02) if roic >= discount_rate else floor
+    dynamic_floor = max(min_terminal_floor, 0.1 * g_theoretical)
     return float(min(max(g_theoretical, dynamic_floor), actual_cap))
 
 
@@ -391,7 +408,7 @@ def get_ebit_margin(
     # Use median of last 3 years as anchor for more recent performance, if available
     n_recent = min(len(hist_margins), 3)
     recent_median = np.nanmedian(hist_margins[:n_recent])
-    
+
     historical_ebit_margin = float(
         0.50 * hist_margins[0] + 0.50 * recent_median
     )
@@ -408,16 +425,19 @@ def get_ebit_margin(
 
     current_year = pd.Timestamp.today().year
     df_future = df[df["year"] >= current_year]
-    df_future = df_future[df_future["revenueAvg"].notna() & df_future["ebitAvg"].notna()]
+    df_future = df_future[df_future["revenueAvg"].notna()
+                          & df_future["ebitAvg"].notna()]
 
     if df_future.empty:
         return np.full(projection_years, max(historical_ebit_margin, 0.05))
 
     projected_revenue = df_future["revenueAvg"].astype(float).values
     projected_ebit = df_future["ebitAvg"].astype(float).values
-    raw_margin = projected_ebit / np.where(projected_revenue > 0, projected_revenue, np.nan)
+    raw_margin = projected_ebit / \
+        np.where(projected_revenue > 0, projected_revenue, np.nan)
 
-    blended_margin = blend_weight * raw_margin + (1 - blend_weight) * historical_ebit_margin
+    blended_margin = blend_weight * raw_margin + \
+        (1 - blend_weight) * historical_ebit_margin
     blended_margin = np.clip(blended_margin, 0.01, 0.70)
 
     analyst_years = blended_margin[:projection_years].tolist()
@@ -492,7 +512,8 @@ def dcf_valuation(
     if "Capital Expenditure" not in cashflow.index:
         raise ValueError(
             "Missing 'Capital Expenditure' in cash flow statement.")
-    capex_series = (-cashflow.loc["Capital Expenditure"]).dropna().sort_index(ascending=False)
+    capex_series = (-cashflow.loc["Capital Expenditure"]
+                    ).dropna().sort_index(ascending=False)
     last_capex = float(capex_series.iloc[0])
 
     if "Accounts Receivable" not in balance.index or "Accounts Payable" not in balance.index:
@@ -517,7 +538,6 @@ def dcf_valuation(
         revenue_clean, capex_series, depreciation.dropna().sort_index(ascending=False),
         balance, last_revenue, last_capex
     )
-    
 
     # Clamp to reasonable bounds [1.0, 20.0]  # Floor of 1.0 per user request
     sales_to_capital = float(np.clip(sales_to_capital, 1.0, 20.0))
@@ -551,12 +571,15 @@ def dcf_valuation(
             net_capex = delta_revenue / sales_to_capital
         else:
             # Shrinking revenue: no net new investment needed, allow slight contraction
-            net_capex = delta_revenue / sales_to_capital  # will be negative (capex falls)
+            # will be negative (capex falls)
+            net_capex = delta_revenue / sales_to_capital
         projected_capex = net_capex + projected_depreciation
 
         # Guardrail: projected capex as % of revenue shouldn't exceed 2x or drop below 0.25x historical
-        capex_pct = projected_capex / projected_revenue if projected_revenue > 0 else hist_capex_pct
-        capex_pct = float(np.clip(capex_pct, hist_capex_pct * 0.25, hist_capex_pct * 2.0))
+        capex_pct = projected_capex / \
+            projected_revenue if projected_revenue > 0 else hist_capex_pct
+        capex_pct = float(
+            np.clip(capex_pct, hist_capex_pct * 0.25, hist_capex_pct * 2.0))
         projected_capex = capex_pct * projected_revenue
 
         # NWC — ratios off last known revenue (stable working capital assumption)
@@ -595,7 +618,7 @@ def dcf_valuation(
     # Textbook: terminal_reinvestment_rate = terminal_growth / terminal_roic
     # If terminal_roic is None, default to terminal_roic = discount_rate (conservative WACC assumption)
     t_roic = terminal_roic if terminal_roic is not None else discount_rate
-    
+
     # Ensure terminal_roic is at least equal to terminal_growth to avoid >100% reinvestment
     t_roic = max(t_roic, terminal_growth + 0.01)
 
@@ -644,7 +667,8 @@ def project_items(
     if "Capital Expenditure" not in cashflow.index:
         raise ValueError(
             "Missing 'Capital Expenditure' in cash flow statement.")
-    capex_series = (-cashflow.loc["Capital Expenditure"]).dropna().sort_index(ascending=False)
+    capex_series = (-cashflow.loc["Capital Expenditure"]
+                    ).dropna().sort_index(ascending=False)
     last_capex = float(capex_series.iloc[0])
 
     # --- Sales-to-Capital ratio ---
@@ -677,7 +701,6 @@ def project_items(
     # --- Depreciation rate (% of revenue) ---
     dep_rate = last_depreciation / last_revenue if last_revenue > 0 else 0.0
 
-
     sales_to_capital = float(np.clip(sales_to_capital, 1.0, 20.0))
     hist_capex_pct = last_capex / last_revenue if last_revenue > 0 else 0.05
 
@@ -702,8 +725,10 @@ def project_items(
         projected_capex = net_capex + projected_depreciation
 
         # Guardrails
-        capex_pct = projected_capex / projected_revenue if projected_revenue > 0 else hist_capex_pct
-        capex_pct = float(np.clip(capex_pct, hist_capex_pct * 0.25, hist_capex_pct * 2.0))
+        capex_pct = projected_capex / \
+            projected_revenue if projected_revenue > 0 else hist_capex_pct
+        capex_pct = float(
+            np.clip(capex_pct, hist_capex_pct * 0.25, hist_capex_pct * 2.0))
         projected_capex = capex_pct * projected_revenue
 
         # NWC
@@ -813,10 +838,12 @@ def fill_excel(
     capex = -cashflow.loc["Capital Expenditure"]
 
     cash_series = get_yf_item(balance, "cash")
-    cash_series = cash_series if cash_series is not None and not cash_series.empty else pd.Series([0.0])
+    cash_series = cash_series if cash_series is not None and not cash_series.empty else pd.Series([
+                                                                                                  0.0])
 
     current_debt_series = get_yf_item(balance, "current debt")
-    current_debt_series = current_debt_series if current_debt_series is not None and not current_debt_series.empty else pd.Series([0.0])
+    current_debt_series = current_debt_series if current_debt_series is not None and not current_debt_series.empty else pd.Series([
+                                                                                                                                  0.0])
 
     nwc = (balance.loc["Current Assets"] - cash_series) - (
         balance.loc["Current Liabilities"] - current_debt_series
@@ -887,14 +914,11 @@ def fill_excel_cca(
 
     ws["F9"] = info.get("totalRevenue")
     ws["G9"] = info.get("ebitda")
-    target_ni = income.loc["Net Income"].dropna().iloc[0] if "Net Income" in income.index else None
-    if target_ni is None:
-        ni_series = income.loc["Net Income"] if (not income.empty and "Net Income" in income.index) else None
-        if ni_series is not None and not ni_series.empty:
-            valid_series = ni_series.dropna()
-            if not valid_series.empty:
-                target_ni = valid_series.iloc[0]
-    
+
+    # Target NI extraction (Sync with cca.py robust logic)
+    target_ni = info.get("netIncome") or info.get("netIncomeToCommon") or (safe_iloc0(
+        income.loc["Net Income"]) if (not income.empty and "Net Income" in income.index) else None)
+
     ws["H9"] = target_ni
 
     target_pe = info.get("trailingPE") or info.get("forwardPE")
@@ -903,7 +927,7 @@ def fill_excel_cca(
     ws["K9"] = info.get("enterpriseToEbitda")
     ws["L9"] = target_pe
     ws["M9"] = info.get("trailingPegRatio") or info.get("pegRatio")
-    
+
     # EPS Growth safety logic
     eps_growth = None
     fmp_growth = pull_info("financial-growth", stock, API_KEY)
@@ -911,10 +935,10 @@ def fill_excel_cca(
         eps_growth = fmp_growth[0].get("epsgrowth")
     if eps_growth is None:
         eps_growth = info.get("earningsGrowth")
-    
+
     ws["N9"] = eps_growth
     ws["P9"] = info.get("returnOnEquity")
-    
+
     # Adjusted P/E safety check
     adj_denominator = (1 + eps_growth) if eps_growth is not None else None
     if target_pe and adj_denominator and adj_denominator != 0:
@@ -945,7 +969,7 @@ def fill_excel_cca(
     # Populate Net Debt and Shares (Search column B for labels)
     net_debt_val = (info.get("totalDebt") or 0) - (info.get("totalCash") or 0)
     shares_val = info.get("sharesOutstanding")
-    
+
     ws["J23"] = net_debt_val
     ws["J25"] = shares_val
 
@@ -980,19 +1004,21 @@ def solve_for_revenue_growth(
     Uses a simple bisection method.
     """
     low, high = -0.5, 2.0  # Search between -50% and +200% annual growth
-    
+
     # Check if price increases with growth
-    p_low = dcf_valuation(revenue, ebit_margin, tax_rate, depreciation, np.full(len(ebit_margin), low), discount_rate, terminal_growth, net_debt, shares_outstanding, cashflow, balance, terminal_roic=terminal_roic)
-    p_high = dcf_valuation(revenue, ebit_margin, tax_rate, depreciation, np.full(len(ebit_margin), high), discount_rate, terminal_growth, net_debt, shares_outstanding, cashflow, balance, terminal_roic=terminal_roic)
-    
+    p_low = dcf_valuation(revenue, ebit_margin, tax_rate, depreciation, np.full(len(ebit_margin), low), discount_rate,
+                          terminal_growth, net_debt, shares_outstanding, cashflow, balance, terminal_roic=terminal_roic)
+    p_high = dcf_valuation(revenue, ebit_margin, tax_rate, depreciation, np.full(len(ebit_margin), high), discount_rate,
+                           terminal_growth, net_debt, shares_outstanding, cashflow, balance, terminal_roic=terminal_roic)
+
     # If the price at max growth is lower than at min growth, growth is value-destructive
     if p_high < p_low:
         return -999.0
-        
+
     for _ in range(max_iter):
         mid = (low + high) / 2
         growth_rates = np.full(len(ebit_margin), mid)
-        
+
         try:
             implied_price = dcf_valuation(
                 revenue=revenue,
@@ -1010,15 +1036,15 @@ def solve_for_revenue_growth(
             )
         except Exception:
             return np.nan
-            
+
         if abs(implied_price - current_price) < tolerance:
             return mid
-            
+
         if implied_price > current_price:
             high = mid
         else:
             low = mid
-            
+
     return (low + high) / 2
 
 
@@ -1045,10 +1071,10 @@ def solve_for_tgr(
     """
     # TGR must be less than discount_rate.Search between -10% and (discount_rate - 0.0001)
     low, high = -0.10, discount_rate - 0.0001
-    
+
     for _ in range(max_iter):
         mid = (low + high) / 2
-        
+
         try:
             implied_price = dcf_valuation(
                 revenue=revenue,
@@ -1066,13 +1092,13 @@ def solve_for_tgr(
             )
         except Exception:
             return np.nan
-            
+
         if abs(implied_price - current_price) < tolerance:
             return mid
-            
+
         if implied_price > current_price:
             high = mid
         else:
             low = mid
-            
+
     return (low + high) / 2
