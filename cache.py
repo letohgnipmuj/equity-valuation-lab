@@ -9,23 +9,31 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Redis configuration
+REDIS_URL = os.getenv("REDIS_URL", None)
 REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
 REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
 REDIS_DB = int(os.getenv("REDIS_DB", 0))
 REDIS_PASSWORD = os.getenv("REDIS_PASSWORD", None)
 
 try:
-    redis_client = redis.Redis(
-        host=REDIS_HOST,
-        port=REDIS_PORT,
-        db=REDIS_DB,
-        password=REDIS_PASSWORD,
-        decode_responses=True
-    )
-    # Test connection
-    redis_client.ping()
-    logger.info(f"Connected to Redis at {REDIS_HOST}:{REDIS_PORT}")
-except redis.ConnectionError as e:
+    if REDIS_URL:
+        redis_client = redis.Redis.from_url(REDIS_URL, decode_responses=True, socket_connect_timeout=2)
+        # Test connection
+        redis_client.ping()
+        logger.info(f"Connected to Redis via URL")
+    else:
+        redis_client = redis.Redis(
+            host=REDIS_HOST,
+            port=REDIS_PORT,
+            db=REDIS_DB,
+            password=REDIS_PASSWORD,
+            decode_responses=True,
+            socket_connect_timeout=2
+        )
+        # Test connection
+        redis_client.ping()
+        logger.info(f"Connected to Redis at {REDIS_HOST}:{REDIS_PORT}")
+except Exception as e:
     logger.warning(f"Could not connect to Redis: {e}. Caching will be disabled.")
     redis_client = None
 

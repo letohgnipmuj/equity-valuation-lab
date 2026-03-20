@@ -39,6 +39,7 @@ def load_company_data(stock: str, use_cache: bool = True) -> Dict[str, Any]:
                 income = pd.read_json(StringIO(cached["income"]), orient="split")
                 cashflow = pd.read_json(StringIO(cached["cashflow"]), orient="split")
                 balance = pd.read_json(StringIO(cached["balance"]), orient="split")
+                print(f"Using cached raw financial data for {stock}")
                 return {
                     "stock": stock,
                     "ticker": yf.Ticker(stock),
@@ -51,13 +52,15 @@ def load_company_data(stock: str, use_cache: bool = True) -> Dict[str, Any]:
             except Exception as e:
                 print(f"Error restoring cache for {stock}: {e}")
 
+    # Not in cache or cache error
+    print(f"Fetching fresh raw financial data for {stock} from yfinance...")
     ticker = yf.Ticker(stock)
     income = ticker.financials
     cashflow = ticker.cashflow
     balance = ticker.balance_sheet
     info = ticker.info
 
-    # Save to cache
+    # Save to cache if data was actually found
     if use_cache and not income.empty:
         cache_data = {
             "income": income.to_json(orient="split"),
@@ -65,7 +68,9 @@ def load_company_data(stock: str, use_cache: bool = True) -> Dict[str, Any]:
             "balance": balance.to_json(orient="split"),
             "info": info
         }
-        set_cache(cache_key, cache_data, ttl=86400) # 24h
+        set_cache(cache_key, cache_data, ttl=86400) # Cache for 24 hours
+    elif income.empty:
+        print(f"Warning: No financial data found for {stock}. Will not cache empty results.")
 
     return {
         "stock": stock,

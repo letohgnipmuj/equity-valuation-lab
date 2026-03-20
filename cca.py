@@ -10,8 +10,8 @@ from utils import pull_info, fill_excel_cca, safe_iloc0, get_weights
 from data import API_KEY
 
 
-def find_peers(ticker_symbol, sector, industry, universe_path="sp500_universe.json", num_peers=6):
-    """Filter universe for candidates: Industry first, then Sector fallback if needed."""
+def find_peers(ticker_symbol, sector, industry, target_ev=None, universe_path="sp500_universe.json", num_peers=15):
+    """Filter universe for candidates and rank by size proximity (Enterprise Value) before fetching fresh data."""
     try:
         with open(universe_path, "r") as f:
             universe = json.load(f)
@@ -22,15 +22,25 @@ def find_peers(ticker_symbol, sector, industry, universe_path="sp500_universe.js
     # Exclude self
     peers = [c for c in universe if c.get("ticker") != ticker_symbol]
 
-    # Step 1: Industry Filter
-    industry_candidates = [c for c in peers if c.get("industry") == industry]
+    # Try Industry Filter
+    candidates = [c for c in peers if c.get("industry") == industry]
+    
+    # Fallback to Sector if industry is too small
+    if len(candidates) < 6:
+        candidates = [c for c in peers if c.get("sector") == sector]
 
-    if len(industry_candidates) >= num_peers:
-        return [c["ticker"] for c in industry_candidates]
+    if target_ev and candidates:
+        # Rank by EV proximity to target
+        def size_proximity(c):
+            c_ev = c.get("enterprise_value") or c.get("market_cap") or 0
+            if c_ev == 0 or target_ev == 0:
+                return float('inf')
+            return abs(c_ev - target_ev) / target_ev
+            
+        candidates.sort(key=size_proximity)
 
-    # Step 2: Sector Fallback (include both industry and sector peers)
-    sector_candidates = [c for c in peers if c.get("sector") == sector]
-    return [c["ticker"] for c in sector_candidates]
+    # Return top 'num_peers' candidates (e.g., top 15-20)
+    return [c["ticker"] for c in candidates[:num_peers]]
 
 
 def get_peer_stats(tickers, fast_mode=False):
@@ -40,8 +50,8 @@ def get_peer_stats(tickers, fast_mode=False):
     peer_results = []
     for t in tickers:
         try:
-            y_ticker = yf.Ticker(t)
-            y_info = y_ticker.info
+            company_data = load_company_data(t)
+            y_info = company_data.get("info", {})
             if not y_info:
                 continue
 
@@ -61,17 +71,17 @@ def get_peer_stats(tickers, fast_mode=False):
                 ebitda = y_info.get("ebitda")
                 net_income = y_info.get("netIncome")
 
-                financials = y_ticker.financials
-                if financials is not None and not financials.empty:
+                income = company_data.get("income")
+                if income is not None and not income.empty:
                     if revenue is None:
                         revenue = safe_iloc0(
-                            financials.loc["Total Revenue"]) if "Total Revenue" in financials.index else None
+                            income.loc["Total Revenue"]) if "Total Revenue" in income.index else None
                     if ebitda is None:
                         ebitda = safe_iloc0(
-                            financials.loc["EBITDA"]) if "EBITDA" in financials.index else None
+                            income.loc["EBITDA"]) if "EBITDA" in income.index else None
                     if net_income is None:
                         net_income = safe_iloc0(
-                            financials.loc["Net Income"]) if "Net Income" in financials.index else None
+                            income.loc["Net Income"]) if "Net Income" in income.index else None
 
                 if revenue is None or ebitda is None:
                     fmp_income = pull_info("income-statement", t, API_KEY)
@@ -168,7 +178,7 @@ def run_cca(stock, export_excel: bool = True, silent: bool = False) -> tuple[flo
     if not silent:
         print(
             f"Finding peer candidates for {stock} in {industry} (Fallback: {sector})...")
-    candidate_tickers = find_peers(stock, sector, industry)
+    candidate_tickers = find_peers(stock, sector, industry, target_ev=target_ev)
     if not candidate_tickers:
         print(f"Error: Could not find any candidates for {stock}.")
         return 0.0, 0.0, 0.0

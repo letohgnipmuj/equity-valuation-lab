@@ -10,6 +10,43 @@ import yfinance as yf
 from openpyxl import load_workbook
 import difflib
 
+from cache import get_cache, set_cache
+
+
+def pull_info(statement, stock, api_key):
+    """
+    Fetch financial data from FMP with caching.
+    """
+    cache_key = f"fmp:{statement}:{stock.upper()}"
+    cached_data = get_cache(cache_key)
+    if cached_data:
+        # print(f"Using cached FMP data for {statement}:{stock}")
+        return cached_data
+
+    if statement == "income-statement" or statement == "balance-sheet-statement" or statement == "cash-flow-statement":
+        # Use stock because ticker is yfinance object
+        url = f"https://financialmodelingprep.com/stable/{statement}/{stock}?apikey={api_key}"
+    elif statement == "analyst-estimates":
+        url = f"https://financialmodelingprep.com/stable/analyst-estimates?symbol={stock}&period=annual&page=0&limit=10&apikey={api_key}"
+    elif statement == "financial-growth":
+        url = f"https://financialmodelingprep.com/stable/financial-growth?symbol={stock}&apikey={api_key}"
+    else:
+        return None
+
+    try:
+        response = requests.get(url)
+        if response.status_code == 200:
+            data = response.json()
+            if data and isinstance(data, (list, dict)):
+                set_cache(cache_key, data, ttl=86400)  # Cache for 24h
+            return data
+        else:
+            print(f"Error fetching {statement}: {response.status_code}")
+            return None
+    except Exception as e:
+        print(f"Network error while fetching {statement}: {e}")
+        return None
+
 
 def compute_sales_to_capital(
     revenue_clean: pd.Series,
@@ -120,21 +157,6 @@ def safe_iloc0(series):
             return valid_items.iloc[0]
     return None
 
-
-def pull_info(statement, stock, api_key):
-    if statement == "income-statement" or statement == "balance-sheet-statement" or statement == "cash-flow-statement":
-        # Use stock because ticker is yfinance object
-        url = f"https://financialmodelingprep.com/stable/{statement}/{stock}?apikey={api_key}"
-    elif statement == "analyst-estimates":
-        url = f"https://financialmodelingprep.com/stable/analyst-estimates?symbol={stock}&period=annual&page=0&limit=10&apikey={api_key}"
-    elif statement == "financial-growth":
-        url = f"https://financialmodelingprep.com/stable/financial-growth?symbol={stock}&apikey={api_key}"
-    response = requests.get(url)
-    if response.status_code == 200:
-        return response.json()
-    else:
-        print(f"Error fetching {statement}: {response.status_code}")
-        return None
 
 
 def get_weights(implied_prices, temperature = 1.0):
