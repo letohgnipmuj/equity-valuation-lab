@@ -4,6 +4,7 @@ import time
 from typing import Optional, Dict, Any, List
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 # Add parent directory to path to import existing valuation modules
@@ -22,6 +23,8 @@ def load_core_main():
 
 valuation_core = load_core_main()
 from cache import get_cache, set_cache
+
+EXPORT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 app = FastAPI(
     title="Equity Valuation Lab API",
@@ -109,6 +112,66 @@ def get_valuation(ticker: str, mode: str = Query("1", description="Valuation mod
     set_cache(cache_key, result, ttl=3600)
     
     return result
+
+
+@app.get("/api/exports/dcf/{ticker}")
+def export_dcf_excel(ticker: str):
+    ticker = ticker.upper()
+    try:
+        valuation_core.run_dcf_for_ticker(ticker, mode="normal", export_excel=True, silent=True)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    filename = f"{ticker} DCF.xlsx"
+    file_path = os.path.join(EXPORT_DIR, filename)
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="DCF export not found.")
+
+    return FileResponse(
+        file_path,
+        filename=filename,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+
+
+@app.get("/api/exports/cca/{ticker}")
+def export_cca_excel(ticker: str):
+    ticker = ticker.upper()
+    try:
+        valuation_core.run_cca(ticker, export_excel=True, silent=True)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    filename = f"{ticker} CCA.xlsx"
+    file_path = os.path.join(EXPORT_DIR, filename)
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="CCA export not found.")
+
+    return FileResponse(
+        file_path,
+        filename=filename,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+
+
+@app.get("/api/exports/monte-carlo/{ticker}")
+def export_monte_carlo_png(ticker: str):
+    ticker = ticker.upper()
+    try:
+        valuation_core.run_dcf_for_ticker(ticker, mode="monte_carlo", export_excel=False, silent=True)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    filename = f"{ticker} Monte Carlo.png"
+    file_path = os.path.join(EXPORT_DIR, filename)
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="Monte Carlo export not found.")
+
+    return FileResponse(
+        file_path,
+        filename=filename,
+        media_type="image/png"
+    )
 
 if __name__ == "__main__":
     import uvicorn

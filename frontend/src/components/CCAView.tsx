@@ -1,14 +1,36 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { CCAModel } from "@/contexts/ValuationContext";
+import { Button } from "@/components/ui/button";
+import { Download } from "lucide-react";
+import { API_BASE_URL } from "@/lib/api";
+import { downloadFile } from "@/lib/download";
 
 interface CCAViewProps {
   cca: CCAModel;
   currentPrice?: number;
+  ticker: string;
 }
 
-export function CCAView({ cca, currentPrice }: CCAViewProps) {
+export function CCAView({ cca, currentPrice, ticker }: CCAViewProps) {
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  const handleDownload = async () => {
+    if (!ticker) return;
+    try {
+      setIsDownloading(true);
+      await downloadFile(
+        `${API_BASE_URL}/api/exports/cca/${ticker}`,
+        `${ticker} CCA.xlsx`
+      );
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   // Safe fallbacks
   const median = cca.median || 0;
   const p25 = cca.range?.[0] || 0;
@@ -26,9 +48,22 @@ export function CCAView({ cca, currentPrice }: CCAViewProps) {
 
   return (
     <div className="glass p-8 rounded-2xl border-white/5 w-full flex flex-col justify-between">
-      <div className="mb-8">
-        <h3 className="text-xl tracking-tight font-medium text-white/90">Comparable Company Analysis</h3>
-        <p className="text-sm text-white/50 mt-1">Valuation implied by industry peer multiples.</p>
+      <div className="mb-8 flex items-center justify-between gap-6">
+        <div>
+          <h3 className="text-xl tracking-tight font-medium text-white/90">Comparable Company Analysis</h3>
+          <p className="text-sm text-white/50 mt-1">Valuation implied by industry peer multiples.</p>
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={handleDownload}
+          disabled={isDownloading}
+          className="border-white/20 bg-white/5 text-white hover:bg-white/10"
+        >
+          <Download className="w-4 h-4" />
+          {isDownloading ? "Exporting..." : "Export CCA"}
+        </Button>
       </div>
 
       <div className="flex items-center justify-between mb-12">

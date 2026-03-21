@@ -159,9 +159,8 @@ def run_dcf_for_ticker(stock: str, mode: str = "normal", export_excel: bool = Tr
         return implied_tgr
 
     elif mode == "monte_carlo":
-        short_name = (info.get("shortName") or stock).upper()
         return run_monte_carlo_sim(
-            stock=short_name,
+            stock=stock,
             revenue=revenue,
             ebit_margin=ebit_margin,
             tax_rate=tax_rate,

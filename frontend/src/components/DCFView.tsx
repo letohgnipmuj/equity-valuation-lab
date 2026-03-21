@@ -1,15 +1,37 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import ReactECharts from "echarts-for-react";
 import { DCFModel } from "@/contexts/ValuationContext";
+import { Button } from "@/components/ui/button";
+import { Download } from "lucide-react";
+import { API_BASE_URL } from "@/lib/api";
+import { downloadFile } from "@/lib/download";
 
 interface DCFViewProps {
   dcf: DCFModel;
   currentPrice?: number;
+  ticker: string;
 }
 
-export function DCFView({ dcf, currentPrice }: DCFViewProps) {
+export function DCFView({ dcf, currentPrice, ticker }: DCFViewProps) {
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  const handleDownload = async () => {
+    if (!ticker) return;
+    try {
+      setIsDownloading(true);
+      await downloadFile(
+        `${API_BASE_URL}/api/exports/dcf/${ticker}`,
+        `${ticker} DCF.xlsx`
+      );
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   // Memoize ECharts configuration so it doesn't re-render excessively
   const chartOptions = useMemo(() => {
     if (!dcf.sensitivity || !dcf.sensitivity.index || !dcf.sensitivity.columns || !dcf.sensitivity.data) return null;
@@ -38,18 +60,18 @@ export function DCFView({ dcf, currentPrice }: DCFViewProps) {
       tooltip: {
         position: 'top',
         formatter: function (params: any) {
-             const tgr = yAxisData[params.value[1]];
-             const wacc = xAxisData[params.value[0]];
-             const val = typeof params.value[2] === 'number' ? `$${params.value[2].toFixed(2)}` : 'N/A';
-             return `TGR: ${tgr}<br/>WACC: ${wacc}<br/>Implied: <b style="color:white">${val}</b>`;
+          const tgr = yAxisData[params.value[1]];
+          const wacc = xAxisData[params.value[0]];
+          const val = typeof params.value[2] === 'number' ? `$${params.value[2].toFixed(2)}` : 'N/A';
+          return `TGR: ${tgr}<br/>WACC: ${wacc}<br/>Implied: <b style="color:white">${val}</b>`;
         },
         backgroundColor: 'rgba(20,20,20,0.85)',
         borderColor: 'rgba(255,255,255,0.1)',
         textStyle: { color: '#fff' }
       },
       grid: {
-        top: 30,
-        bottom: 70,
+        top: 10,
+        bottom: 40,
         left: 60,
         right: 20
       },
@@ -60,7 +82,7 @@ export function DCFView({ dcf, currentPrice }: DCFViewProps) {
         axisLabel: { color: 'rgba(255,255,255,0.6)' },
         name: 'WACC',
         nameLocation: 'middle',
-        nameGap: 25,
+        nameGap: 35,
         nameTextStyle: { color: 'rgba(255,255,255,0.8)' }
       },
       yAxis: {
@@ -76,28 +98,24 @@ export function DCFView({ dcf, currentPrice }: DCFViewProps) {
       visualMap: {
         min: minVal === Infinity ? 0 : minVal,
         max: maxVal === -Infinity ? 10 : maxVal,
-        calculable: true,
-        orient: 'horizontal',
-        left: 'center',
-        bottom: -35,
+        show: false,
         inRange: {
           color: ['rgba(255,0,0,0.4)', 'rgba(50,50,50,0.6)', 'rgba(0,255,100,0.4)']
-        },
-        textStyle: { color: 'rgba(255,255,255,0.6)' }
+        }
       },
       series: [{
         name: 'Sensitivity',
         type: 'heatmap',
         data: data,
         label: {
-            show: true,
-            formatter: function(p: any) {
-                if (typeof p.value[2] === 'number') {
-                    return `$${p.value[2].toFixed(2)}`;
-                }
-                return '--';
-            },
-            color: '#fff'
+          show: true,
+          formatter: function (p: any) {
+            if (typeof p.value[2] === 'number') {
+              return `$${p.value[2].toFixed(2)}`;
+            }
+            return '--';
+          },
+          color: '#fff'
         },
         emphasis: {
           itemStyle: {
@@ -112,9 +130,22 @@ export function DCFView({ dcf, currentPrice }: DCFViewProps) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
       <div className="space-y-6">
-        <div>
-          <h3 className="text-xl tracking-tight font-medium text-white/90">Discounted Cash Flow</h3>
-          <p className="text-sm text-white/50 mt-1 mb-6">Implied fair value based on estimated future cash flows.</p>
+        <div className="flex items-center justify-between gap-6">
+          <div>
+            <h3 className="text-xl tracking-tight font-medium text-white/90">Discounted Cash Flow</h3>
+            <p className="text-sm text-white/50 mt-1 mb-6">Implied fair value based on estimated future cash flows.</p>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleDownload}
+            disabled={isDownloading}
+            className="border-white/20 bg-white/5 text-white hover:bg-white/10"
+          >
+            <Download className="w-4 h-4" />
+            {isDownloading ? "Exporting..." : "Export DCF"}
+          </Button>
         </div>
 
         <div className="glass p-6 rounded-2xl flex items-center justify-between border-white/5">
@@ -136,12 +167,12 @@ export function DCFView({ dcf, currentPrice }: DCFViewProps) {
         {dcf.assumptions && (
           <div className="grid grid-cols-2 gap-4">
             <div className="glass p-4 rounded-xl border-white/5 flex flex-col justify-center">
-               <span className="text-xs text-white/40 uppercase font-bold tracking-wider mb-2">Discount Rate (WACC)</span>
-               <span className="text-xl font-mono text-white/80">{dcf.wacc ? (dcf.wacc * 100).toFixed(2) : '-'}%</span>
+              <span className="text-xs text-white/40 uppercase font-bold tracking-wider mb-2">Discount Rate (WACC)</span>
+              <span className="text-xl font-mono text-white/80 bg-white/10 p-2 rounded">{dcf.wacc ? (dcf.wacc * 100).toFixed(2) : '-'}%</span>
             </div>
             <div className="glass p-4 rounded-xl border-white/5 flex flex-col justify-center">
-               <span className="text-xs text-white/40 uppercase font-bold tracking-wider mb-2">Terminal Growth (TGR)</span>
-               <span className="text-xl font-mono text-white/80">{dcf.tgr ? (dcf.tgr * 100).toFixed(2) : '-'}%</span>
+              <span className="text-xs text-white/40 uppercase font-bold tracking-wider mb-2">Terminal Growth (TGR)</span>
+              <span className="text-xl font-mono text-white/80 bg-white/10 p-2 rounded">{dcf.tgr ? (dcf.tgr * 100).toFixed(2) : '-'}%</span>
             </div>
           </div>
         )}
@@ -149,10 +180,10 @@ export function DCFView({ dcf, currentPrice }: DCFViewProps) {
 
       <div className="glass p-6 rounded-2xl border-white/5 h-full min-h-[450px] flex flex-col">
         <h4 className="text-sm font-semibold tracking-wider text-white/40 uppercase mb-6 text-center">Sensitivity Matrix</h4>
-        
+
         {chartOptions ? (
           <div className="flex-1 w-full min-h-[300px]">
-             <ReactECharts option={chartOptions} style={{height: '100%', width: '100%'}} />
+            <ReactECharts option={chartOptions} style={{ height: '100%', width: '100%' }} />
           </div>
         ) : (
           <div className="flex-1 flex items-center justify-center opacity-40">

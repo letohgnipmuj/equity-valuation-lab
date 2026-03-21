@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode } from "react";
+import { API_BASE_URL } from "@/lib/api";
 
 // Matches ValuationResponseModel from backend
 export interface DCFAssumptions {
@@ -74,7 +75,7 @@ export function ValuationProvider({ children }: { children: ReactNode }) {
         
         try {
             // mode=1 fetches combined data
-            const res = await fetch(`http://127.0.0.1:8000/api/valuation/${ticker}?mode=1`);
+            const res = await fetch(`${API_BASE_URL}/api/valuation/${ticker}?mode=1`);
             
             if (!res.ok) {
                 const data = await res.json();
