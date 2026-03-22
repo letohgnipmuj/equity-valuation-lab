@@ -91,16 +91,6 @@ export default function Home() {
 
   return (
     <main className="min-h-screen relative flex flex-col items-center p-8 transition-all duration-700">
-      {/* Dynamic Background Noise & Blur */}
-      <div className="fixed inset-0 pointer-events-none -z-10 bg-gradient-to-br from-black via-zinc-950 to-[#0A0A0A]"></div>
-
-      {/* Floating Header */}
-      <header className="w-full max-w-7xl mx-auto flex justify-between items-center py-6 mb-12">
-        <h1 className="text-2xl font-semibold tracking-tighter text-white/90">
-          Equity Valuation <span className="text-white/90">Lab</span>
-        </h1>
-      </header>
-
       {/* Main Content Area */}
       <div className={`w-full max-w-7xl mx-auto flex flex-col transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${valuationData ? 'pt-0' : 'pt-[20vh] items-center'}`}>
 
