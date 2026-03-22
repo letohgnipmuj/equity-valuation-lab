@@ -122,7 +122,7 @@ export default function Home() {
           <LoadingDashboard progress={progress} stepText={loadingSteps[stepIndex]} />
         )}
 
-        {showResults && (
+        {showResults && valuationData && (
           <div className="w-full flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-8 duration-700">
             {/* Header / Summary Card */}
             <div className="glass-card p-8 flex flex-col md:flex-row justify-between items-center gap-8">
