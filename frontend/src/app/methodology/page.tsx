@@ -12,7 +12,7 @@ export default function MethodologyPage() {
             </h2>
           </div>
           <a
-            href="#"
+            href="https://github.com/letohgnipmuj/equity-valuation-lab"
             className="glass px-5 py-3 rounded-lg text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 transition"
           >
             View on GitHub
