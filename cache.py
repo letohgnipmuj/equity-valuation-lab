@@ -17,7 +17,8 @@ REDIS_PASSWORD = os.getenv("REDIS_PASSWORD", None)
 
 try:
     if REDIS_URL:
-        redis_client = redis.Redis.from_url(REDIS_URL, decode_responses=True, socket_connect_timeout=2)
+        redis_client = redis.Redis.from_url(
+            REDIS_URL, decode_responses=True, socket_connect_timeout=2)
         # Test connection
         redis_client.ping()
         logger.info(f"Connected to Redis via URL")
@@ -34,8 +35,10 @@ try:
         redis_client.ping()
         logger.info(f"Connected to Redis at {REDIS_HOST}:{REDIS_PORT}")
 except Exception as e:
-    logger.warning(f"Could not connect to Redis: {e}. Caching will be disabled.")
+    logger.warning(
+        f"Could not connect to Redis: {e}. Caching will be disabled.")
     redis_client = None
+
 
 def get_cache(key: str) -> Optional[Any]:
     if not redis_client:
@@ -48,6 +51,7 @@ def get_cache(key: str) -> Optional[Any]:
         logger.error(f"Error reading from cache: {e}")
     return None
 
+
 def set_cache(key: str, value: Any, ttl: int = 86400) -> bool:
     if not redis_client:
         return False
@@ -58,18 +62,20 @@ def set_cache(key: str, value: Any, ttl: int = 86400) -> bool:
         logger.error(f"Error writing to cache: {e}")
         return False
 
+
 def acquire_lock(lock_name: str, acquire_timeout: int = 10, lock_timeout: int = 60) -> Optional[str]:
     """
     Simple Redis lock for request deduplication.
     """
     if not redis_client:
         return "mock_lock_id"
-        
+
     import uuid
     identifier = str(uuid.uuid4())
     if redis_client.set(lock_name, identifier, nx=True, ex=lock_timeout):
         return identifier
     return None
+
 
 def release_lock(lock_name: str, identifier: str):
     if not redis_client:
