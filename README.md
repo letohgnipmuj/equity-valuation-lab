@@ -31,7 +31,7 @@ An equity valuation engine designed for automated analysis, combining Discounted
 └── cache.py                # Redix/Local caching abstraction
 ```
 
-## Local Development
+## Local Deployment
 
 ### 1. Prerequisites
 
@@ -58,27 +58,3 @@ npm run dev
 ```
 
 The application will be available at `http://localhost:3000`.
-
-## Deployment Guide
-
-### Backend (Render)
-
-1. Connect your repository to **Render**.
-2. Select **Web Service**.
-3. Point to the `backend/Dockerfile`.
-4. Add the following environment variables:
-   - `PORT`: `10000`
-   - `HOST`: `0.0.0.0`
-   - `PYTHONUNBUFFERED`: `1`
-
-### Frontend (Vercel)
-
-1. Connect your repository to **Vercel**.
-2. Set the **Root Directory** to `frontend`.
-3. Configure the **Build Command**: `npm run build`.
-4. Set the following environment variable:
-   - `NEXT_PUBLIC_API_URL`: *Your Render backend URL (e.g., https://your-backend.onrender.com)*
-
-## License
-
-MIT
