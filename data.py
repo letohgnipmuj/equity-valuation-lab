@@ -20,7 +20,7 @@ PROJECTION_YEARS: int = 10
 EQUITY_RISK_PREMIUM: float = 0.05
 RISK_FREE_RATE: float = 0.04  # Risk-free rate
 # Nominal GDP growth rate (approximate upper bound for terminal growth)
-MAX_TERMINAL_GROWTH: float = 0.04
+MAX_TERMINAL_GROWTH: float = 0.045
 
 
 from cache import get_cache, set_cache

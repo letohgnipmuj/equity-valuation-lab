@@ -43,16 +43,13 @@ export default function Home() {
   useEffect(() => {
     if (!loadingActive) return;
 
-    const skeletonTimer = setTimeout(() => setShowSkeleton(true), 2000);
+    const skeletonTimer = setTimeout(() => setShowSkeleton(true), 3000);
     const start = Date.now();
 
     const progressTimer = setInterval(() => {
       const elapsed = Date.now() - start;
-      const next = Math.min(100, (elapsed / 60000) * 100);
+      const next = Math.min(95, (elapsed / 120000) * 100);
       setProgress(next);
-      if (next >= 100) {
-        setLoadingComplete(true);
-      }
     }, 400);
 
     const stepTimer = setInterval(() => {
@@ -92,7 +89,7 @@ export default function Home() {
   return (
     <main className="min-h-screen relative flex flex-col items-center p-8 transition-all duration-700">
       {/* Main Content Area */}
-      <div className={`w-full max-w-7xl mx-auto flex flex-col transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${valuationData ? 'pt-0' : 'pt-[20vh] items-center'}`}>
+      <div className={`w-full max-w-7xl mx-auto flex flex-col gap-16 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${valuationData ? 'pt-0' : 'pt-[20vh] items-center'}`}>
 
         {/* Search Bar - Center aligned initially, moves to top contextually when data loads? We can just keep it elegantly centered/topped */}
         <div className={`w-full transition-all duration-700 ${showResults ? 'max-w-xl mx-0 mb-12' : 'max-w-2xl text-center'}`}>
