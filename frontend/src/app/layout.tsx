@@ -57,6 +57,7 @@ export default function RootLayout({
             {children}
           </div>
         </ValuationProvider>
+        <Analytics />
       </body>
     </html>
   );
