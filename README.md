@@ -4,10 +4,10 @@ An equity valuation engine designed for automated analysis of US public equities
 
 ## How it works
 
-**DCF**: Finds the **intrinsic value** of a company by projecting future cash flows and discounting them to the present day.
-**CCA**: Finds the implied **fair market value** of a company by comparing its valuation ratios (EV/EBITDA, EV/REVENUE, and P/E) to similar peers.
-**Monte Carlo**: Randomizes key DCF inputs (revenue growth, WACC, and TGR) centering around base case assumptions to generate probability-weighted valuation range rather than a single estimate.
-**Reverse DCF**: Starts with the current stock price and solves for the revenue growth and terminal growth rate needed to justify it, showing the market's implied expectations.
+**DCF**: Finds the **intrinsic value** of a company by projecting future cash flows and discounting them to the present day. <br>
+**CCA**: Finds the implied **fair market value** of a company by comparing its valuation ratios (EV/EBITDA, EV/REVENUE, and P/E) to similar peers. <br>
+**Monte Carlo**: Randomizes key DCF inputs (revenue growth, WACC, and TGR) centering around base case assumptions to generate probability-weighted valuation range rather than a single estimate. <br>
+**Reverse DCF**: Starts with the current stock price and solves for the revenue growth and terminal growth rate needed to justify it, showing the market's implied expectations. <br>
 
 ## Tech Stack
 
