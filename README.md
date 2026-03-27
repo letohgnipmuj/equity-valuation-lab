@@ -1,7 +1,7 @@
 # Equity Valuation Lab
 
 An equity valuation engine designed for automated analysis of US public equities (S&P 500), combining Discounted Cash Flow (DCF), Comparable Company Analysis (CCA), and Monte Carlo simulations. <br>
-Not financial advice, just a tool to make common mondeling techniques easier.
+Not financial advice, just a tool to make common modeling techniques easier.
 
 ## How it works
 
