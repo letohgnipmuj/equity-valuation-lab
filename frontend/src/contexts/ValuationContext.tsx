@@ -58,6 +58,7 @@ interface ValuationContextType {
     isLoading: boolean;
     error: string | null;
     fetchValuation: (ticker: string) => Promise<void>;
+    loadCachedValuation: (valuation: ValuationData) => void;
 }
 
 const ValuationContext = createContext<ValuationContextType | undefined>(undefined);
@@ -92,8 +93,14 @@ export function ValuationProvider({ children }: { children: ReactNode }) {
         }
     };
 
+    const loadCachedValuation = (valuation: ValuationData) => {
+        setValuationData(valuation);
+        setError(null);
+        setIsLoading(false);
+    };
+
     return (
-        <ValuationContext.Provider value={{ valuationData, isLoading, error, fetchValuation }}>
+        <ValuationContext.Provider value={{ valuationData, isLoading, error, fetchValuation, loadCachedValuation }}>
             {children}
         </ValuationContext.Provider>
     );

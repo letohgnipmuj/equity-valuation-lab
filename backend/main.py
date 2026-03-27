@@ -11,6 +11,11 @@ from pydantic import BaseModel
 # Add parent directory to path to import existing valuation modules
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+try:
+    from backend.history import get_recent_valuation_history, save_valuation_to_history
+except ModuleNotFoundError:
+    from history import get_recent_valuation_history, save_valuation_to_history
+
 
 def load_cache():
     root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -106,6 +111,11 @@ class ValuationResponseModel(BaseModel):
     timestamp: float
 
 
+class ValuationHistoryResponseModel(BaseModel):
+    entries: List[ValuationResponseModel]
+    limit: int
+
+
 @app.get("/api/health")
 def health_check():
     return {"status": "ok", "timestamp": time.time()}
@@ -123,6 +133,7 @@ def get_valuation(ticker: str, mode: str = Query("1", description="Valuation mod
     # Try to fetch from cache first (1 hour cache for full API response)
     cached_result = get_cache(cache_key)
     if cached_result:
+        save_valuation_to_history(cached_result)
         return cached_result
 
     # Using the existing JSON orchestrator function
@@ -133,8 +144,15 @@ def get_valuation(ticker: str, mode: str = Query("1", description="Valuation mod
 
     # Save successful response to Redis cache
     set_cache(cache_key, result, ttl=14400)
+    save_valuation_to_history(result)
 
     return result
+
+
+@app.get("/api/valuations/history", response_model=ValuationHistoryResponseModel)
+def get_valuation_history(limit: int = Query(20, ge=1, le=20)):
+    entries = get_recent_valuation_history(limit=limit)
+    return {"entries": entries, "limit": limit}
 
 
 @app.get("/api/exports/dcf/{ticker}")

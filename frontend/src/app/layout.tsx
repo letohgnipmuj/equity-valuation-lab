@@ -48,6 +48,12 @@ export default function RootLayout({
                   Home
                 </Link>
                 <Link
+                  href="/history"
+                  className="glass px-4 py-2 rounded-lg text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 transition"
+                >
+                  History
+                </Link>
+                <Link
                   href="/methodology"
                   className="glass px-4 py-2 rounded-lg text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 transition"
                 >
