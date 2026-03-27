@@ -1,8 +1,12 @@
+from io import StringIO
+from cache import get_cache, set_cache
 import yfinance as yf
 import pandas as pd
 from typing import Dict, Any
 import os
 from dotenv import load_dotenv
+import yfinance.exceptions
+import time
 
 load_dotenv()
 
@@ -23,22 +27,22 @@ RISK_FREE_RATE: float = 0.04  # Risk-free rate
 MAX_TERMINAL_GROWTH: float = 0.045
 
 
-from cache import get_cache, set_cache
-from io import StringIO
-
 def load_company_data(stock: str, use_cache: bool = True) -> Dict[str, Any]:
     """
     Load core financial statements and metadata for a given ticker with Redis caching.
     """
     cache_key = f"raw_data:{stock.upper()}"
-    
+
     if use_cache:
         cached = get_cache(cache_key)
         if cached:
             try:
-                income = pd.read_json(StringIO(cached["income"]), orient="split")
-                cashflow = pd.read_json(StringIO(cached["cashflow"]), orient="split")
-                balance = pd.read_json(StringIO(cached["balance"]), orient="split")
+                income = pd.read_json(
+                    StringIO(cached["income"]), orient="split")
+                cashflow = pd.read_json(
+                    StringIO(cached["cashflow"]), orient="split")
+                balance = pd.read_json(
+                    StringIO(cached["balance"]), orient="split")
                 print(f"Using cached raw financial data for {stock}")
                 return {
                     "stock": stock,
@@ -54,11 +58,25 @@ def load_company_data(stock: str, use_cache: bool = True) -> Dict[str, Any]:
 
     # Not in cache or cache error
     print(f"Fetching fresh raw financial data for {stock} from yfinance...")
-    ticker = yf.Ticker(stock)
-    income = ticker.financials
-    cashflow = ticker.cashflow
-    balance = ticker.balance_sheet
-    info = ticker.info
+
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            ticker = yf.Ticker(stock)
+            income = ticker.financials
+            cashflow = ticker.cashflow
+            balance = ticker.balance_sheet
+            info = ticker.info
+            break  # Success
+        except yfinance.exceptions.YFRateLimitError as e:
+            if attempt < max_retries - 1:
+                wait_time = 2 ** attempt  # Exponential backoff: 1, 2, 4 seconds
+                print(
+                    f"Rate limited, retrying in {wait_time} seconds... ({attempt + 1}/{max_retries})")
+                time.sleep(wait_time)
+            else:
+                print(f"Rate limit error after {max_retries} attempts: {e}")
+                raise e
 
     # Save to cache if data was actually found
     if use_cache and not income.empty:
@@ -68,9 +86,10 @@ def load_company_data(stock: str, use_cache: bool = True) -> Dict[str, Any]:
             "balance": balance.to_json(orient="split"),
             "info": info
         }
-        set_cache(cache_key, cache_data, ttl=86400) # Cache for 24 hours
+        set_cache(cache_key, cache_data, ttl=604800)  # Cache for 7 days
     elif income.empty:
-        print(f"Warning: No financial data found for {stock}. Will not cache empty results.")
+        print(
+            f"Warning: No financial data found for {stock}. Will not cache empty results.")
 
     return {
         "stock": stock,
@@ -88,8 +107,22 @@ def is_dcf_safe(stock: str, income: pd.DataFrame = None) -> bool:
     Basic sanity checks to decide whether a DCF is appropriate for a company.
     """
     try:
-        ticker = yf.Ticker(stock)
-        info = ticker.info
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                ticker = yf.Ticker(stock)
+                info = ticker.info
+                break
+            except yfinance.exceptions.YFRateLimitError as e:
+                if attempt < max_retries - 1:
+                    wait_time = 2 ** attempt
+                    print(
+                        f"Rate limited in is_dcf_safe, retrying in {wait_time} seconds... ({attempt + 1}/{max_retries})")
+                    time.sleep(wait_time)
+                else:
+                    print(
+                        f"Rate limit error in is_dcf_safe after {max_retries} attempts: {e}")
+                    raise e
 
         country = info.get("country")
         exchange = info.get("exchange")

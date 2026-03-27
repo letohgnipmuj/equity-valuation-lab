@@ -21,7 +21,7 @@ export default function MethodologyPage() {
         <p className="text-lg text-white/50 max-w-2xl leading-relaxed">
           This platform combines multiple valuation approaches to estimate a
           company&apos;s intrinsic value and compare it to the current market
-          price. Each method captures a different perspective on value.
+          price. Each method captures a different perspective on value. <br /> Not financial advice, just a tool to make common modeling techniques easier.
         </p>
       </section>
 

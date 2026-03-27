@@ -1,3 +1,4 @@
+import importlib.util
 import sys
 import os
 import time
@@ -8,10 +9,24 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 # Add parent directory to path to import existing valuation modules
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+
+def load_cache():
+    root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    cache_path = os.path.join(root_dir, "cache.py")
+    spec = importlib.util.spec_from_file_location("cache_module", cache_path)
+    cache_module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(cache_module)
+    return cache_module
+
+
+cache_module = load_cache()
+get_cache = cache_module.get_cache
+set_cache = cache_module.set_cache
 
 # Import existing core functions and cache logic from the root main.py
-import importlib.util
+
 
 def load_core_main():
     root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -21,8 +36,8 @@ def load_core_main():
     spec.loader.exec_module(core)
     return core
 
+
 valuation_core = load_core_main()
-from cache import get_cache, set_cache
 
 EXPORT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -35,11 +50,12 @@ app = FastAPI(
 # Configure CORS for frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # In production, set this to the Vercel URL
+    allow_origins=["*"],  # In production, set this to the Vercel URL
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 class DCFAssumptionsModel(BaseModel):
     growth_rates: Optional[List[float]] = None
@@ -47,6 +63,7 @@ class DCFAssumptionsModel(BaseModel):
     tgr: Optional[float] = None
     ebit_margin: Optional[List[float]] = None
     tax_rate: Optional[float] = None
+
 
 class DCFModel(BaseModel):
     implied_price: float
@@ -57,19 +74,23 @@ class DCFModel(BaseModel):
     sensitivity: Optional[Dict[str, Any]] = None
     assumptions: Optional[DCFAssumptionsModel] = None
 
+
 class CCAModel(BaseModel):
     median: float
     range: List[float]
     peers: Optional[List[Dict[str, Any]]] = None
+
 
 class MonteCarloModel(BaseModel):
     median: float
     range: List[float]
     distribution: Optional[List[float]] = None
 
+
 class MarketImpliedModel(BaseModel):
     revenue_growth: Optional[float] = None
     tgr: Optional[float] = None
+
 
 class ValuationResponseModel(BaseModel):
     ticker: str
@@ -84,9 +105,11 @@ class ValuationResponseModel(BaseModel):
     market_implied: Optional[MarketImpliedModel] = None
     timestamp: float
 
+
 @app.get("/api/health")
 def health_check():
     return {"status": "ok", "timestamp": time.time()}
+
 
 @app.get("/api/valuation/{ticker}", response_model=ValuationResponseModel)
 def get_valuation(ticker: str, mode: str = Query("1", description="Valuation mode (1=Combined, 2=DCF, 3=CCA, 4=Reverse, 5=Monte Carlo)")):
@@ -96,7 +119,7 @@ def get_valuation(ticker: str, mode: str = Query("1", description="Valuation mod
     """
     ticker = ticker.upper()
     cache_key = f"api_valuation:{ticker}:{mode}"
-    
+
     # Try to fetch from cache first (1 hour cache for full API response)
     cached_result = get_cache(cache_key)
     if cached_result:
@@ -104,13 +127,13 @@ def get_valuation(ticker: str, mode: str = Query("1", description="Valuation mod
 
     # Using the existing JSON orchestrator function
     result = valuation_core.run_valuation_orchestrator_json(ticker, mode=mode)
-    
+
     if "error" in result:
         raise HTTPException(status_code=400, detail=result["error"])
-        
+
     # Save successful response to Redis cache
-    set_cache(cache_key, result, ttl=3600)
-    
+    set_cache(cache_key, result, ttl=14400)
+
     return result
 
 
@@ -118,7 +141,8 @@ def get_valuation(ticker: str, mode: str = Query("1", description="Valuation mod
 def export_dcf_excel(ticker: str):
     ticker = ticker.upper()
     try:
-        valuation_core.run_dcf_for_ticker(ticker, mode="normal", export_excel=True, silent=True)
+        valuation_core.run_dcf_for_ticker(
+            ticker, mode="normal", export_excel=True, silent=True)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -158,20 +182,23 @@ def export_cca_excel(ticker: str):
 def export_monte_carlo_png(ticker: str):
     ticker = ticker.upper()
     try:
-        valuation_core.run_dcf_for_ticker(ticker, mode="monte_carlo", export_excel=False, silent=True)
+        valuation_core.run_dcf_for_ticker(
+            ticker, mode="monte_carlo", export_excel=False, silent=True)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
     filename = f"{ticker} Monte Carlo.png"
     file_path = os.path.join(EXPORT_DIR, filename)
     if not os.path.exists(file_path):
-        raise HTTPException(status_code=404, detail="Monte Carlo export not found.")
+        raise HTTPException(
+            status_code=404, detail="Monte Carlo export not found.")
 
     return FileResponse(
         file_path,
         filename=filename,
         media_type="image/png"
     )
+
 
 if __name__ == "__main__":
     import uvicorn
