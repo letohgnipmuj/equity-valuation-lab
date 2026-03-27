@@ -29,6 +29,8 @@ export default function RootLayout({
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        suppressHydrationWarning
+        data-qb-installed="true"
       >
         <ValuationProvider>
           <div className="min-h-screen relative flex flex-col">

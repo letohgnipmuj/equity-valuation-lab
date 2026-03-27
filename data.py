@@ -25,13 +25,25 @@ EQUITY_RISK_PREMIUM: float = 0.05
 RISK_FREE_RATE: float = 0.04  # Risk-free rate
 # Nominal GDP growth rate (approximate upper bound for terminal growth)
 MAX_TERMINAL_GROWTH: float = 0.045
+LOCAL_CACHE_TTL_SECONDS: int = 60
+LOCAL_COMPANY_CACHE: Dict[str, tuple[Dict[str, Any], float]] = {}
 
 
 def load_company_data(stock: str, use_cache: bool = True) -> Dict[str, Any]:
     """
     Load core financial statements and metadata for a given ticker with Redis caching.
     """
-    cache_key = f"raw_data:{stock.upper()}"
+    stock = stock.upper()
+    now = time.time()
+    cache_key = f"raw_data:{stock}"
+
+    if use_cache:
+        local_entry = LOCAL_COMPANY_CACHE.get(stock)
+        if local_entry:
+            cached_data, cached_at = local_entry
+            if now - cached_at < LOCAL_CACHE_TTL_SECONDS:
+                print(f"Using in-memory cached raw data for {stock}")
+                return cached_data
 
     if use_cache:
         cached = get_cache(cache_key)
@@ -44,7 +56,7 @@ def load_company_data(stock: str, use_cache: bool = True) -> Dict[str, Any]:
                 balance = pd.read_json(
                     StringIO(cached["balance"]), orient="split")
                 print(f"Using cached raw financial data for {stock}")
-                return {
+                company_data = {
                     "stock": stock,
                     "ticker": yf.Ticker(stock),
                     "income": income,
@@ -53,6 +65,8 @@ def load_company_data(stock: str, use_cache: bool = True) -> Dict[str, Any]:
                     "info": cached["info"],
                     "cached": True
                 }
+                LOCAL_COMPANY_CACHE[stock] = (company_data, now)
+                return company_data
             except Exception as e:
                 print(f"Error restoring cache for {stock}: {e}")
 
@@ -91,7 +105,7 @@ def load_company_data(stock: str, use_cache: bool = True) -> Dict[str, Any]:
         print(
             f"Warning: No financial data found for {stock}. Will not cache empty results.")
 
-    return {
+    company_data = {
         "stock": stock,
         "ticker": ticker,
         "income": income,
@@ -100,6 +114,9 @@ def load_company_data(stock: str, use_cache: bool = True) -> Dict[str, Any]:
         "info": info,
         "cached": False
     }
+
+    LOCAL_COMPANY_CACHE[stock] = (company_data, now)
+    return company_data
 
 
 def is_dcf_safe(stock: str, income: pd.DataFrame = None) -> bool:
