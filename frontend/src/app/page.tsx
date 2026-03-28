@@ -10,6 +10,14 @@ import { MonteCarloView } from "@/components/MonteCarloView";
 import { ReverseDCFView } from "@/components/ReverseDCFView";
 import { LoadingDashboard } from "@/components/LoadingDashboard";
 
+export const metadata = {
+  title: {
+    default: 'Equity Valuation Engine',
+    template: '%s | Equity Valuation Engine'
+  },
+  description: 'Automated DCF, Comparable Company Analysis, and Monte Carlo simulations.'
+}
+
 export default function Home() {
   const { valuationData, isLoading, error } = useValuation();
   const [showSkeleton, setShowSkeleton] = useState(false);

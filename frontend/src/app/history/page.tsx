@@ -6,6 +6,11 @@ import { Target, TrendingDown, TrendingUp } from "lucide-react";
 import { API_BASE_URL } from "@/lib/api";
 import { useValuation, ValuationData } from "@/contexts/ValuationContext";
 
+export const metadata = {
+  title: 'History',
+  description: 'Browse  past equity valuations.',
+}
+
 interface ValuationHistoryResponse {
   entries: ValuationData[];
   limit: number;

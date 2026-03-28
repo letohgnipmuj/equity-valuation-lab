@@ -1,3 +1,8 @@
+export const metadata = {
+  title: 'Methodology',
+  description: 'Learn about the valuation methods used in this engine.',
+}
+
 export default function MethodologyPage() {
   return (
     <main className="w-full max-w-6xl mx-auto px-8 pb-16 pt-6">
