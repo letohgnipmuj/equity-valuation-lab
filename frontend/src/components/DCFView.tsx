@@ -12,9 +12,25 @@ interface DCFViewProps {
   dcf: DCFModel;
   currentPrice?: number;
   ticker: string;
+  scenarioLabel?: string;
+  scenarioWacc?: number;
+  scenarioTgr?: number;
+  scenarioWaccDelta?: number;
+  scenarioTgrDelta?: number;
+  scenarioImpliedPrice?: number;
 }
 
-export function DCFView({ dcf, currentPrice, ticker }: DCFViewProps) {
+export function DCFView({
+  dcf,
+  currentPrice,
+  ticker,
+  scenarioLabel,
+  scenarioWacc,
+  scenarioTgr,
+  scenarioWaccDelta,
+  scenarioTgrDelta,
+  scenarioImpliedPrice,
+}: DCFViewProps) {
   const [isDownloading, setIsDownloading] = useState(false);
 
   const handleDownload = async () => {
@@ -43,6 +59,19 @@ export function DCFView({ dcf, currentPrice, ticker }: DCFViewProps) {
     let minVal = Infinity;
     let maxVal = -Infinity;
 
+    const getNearestIndex = (values: number[], target: number) => {
+      let bestIdx = 0;
+      let bestDiff = Infinity;
+      values.forEach((val, idx) => {
+        const diff = Math.abs(val - target);
+        if (diff < bestDiff) {
+          bestDiff = diff;
+          bestIdx = idx;
+        }
+      });
+      return bestIdx;
+    };
+
     dcf.sensitivity.data.forEach((row: any[], yIdx: number) => {
       row.forEach((val, xIdx) => {
         const v = typeof val === 'number' ? val : parseFloat(val);
@@ -55,6 +84,13 @@ export function DCFView({ dcf, currentPrice, ticker }: DCFViewProps) {
         }
       });
     });
+
+    let highlightPoint: [number, number] | null = null;
+    if (scenarioWacc !== undefined && scenarioTgr !== undefined) {
+      const tgrIndex = getNearestIndex(dcf.sensitivity.index, scenarioTgr);
+      const waccIndex = getNearestIndex(dcf.sensitivity.columns, scenarioWacc);
+      highlightPoint = [waccIndex, tgrIndex];
+    }
 
     return {
       tooltip: {
@@ -122,10 +158,21 @@ export function DCFView({ dcf, currentPrice, ticker }: DCFViewProps) {
             shadowBlur: 10,
             shadowColor: 'rgba(0, 0, 0, 0.5)'
           }
-        }
+        },
+        markPoint: highlightPoint ? {
+          symbol: 'rect',
+          symbolSize: 22,
+          data: [{ coord: highlightPoint }],
+          itemStyle: {
+            color: 'transparent',
+            borderColor: 'rgba(255,255,255,0.9)',
+            borderWidth: 2
+          },
+          label: { show: false }
+        } : undefined
       }]
     };
-  }, [dcf]);
+  }, [dcf, scenarioTgr, scenarioWacc]);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
@@ -150,15 +197,21 @@ export function DCFView({ dcf, currentPrice, ticker }: DCFViewProps) {
 
         <div className="glass p-6 rounded-2xl flex items-center justify-between border-white/5">
           <div className="flex flex-col">
-            <span className="text-sm text-white/50 uppercase tracking-widest font-semibold mb-1">DCF Output</span>
-            <span className="text-4xl font-mono text-white">${dcf.implied_price.toFixed(2)}</span>
+            <span className="text-5xl font-mono text-white">
+              ${((typeof scenarioImpliedPrice === "number" ? scenarioImpliedPrice : dcf.implied_price) || 0).toFixed(2)}
+            </span>
+            {scenarioLabel && (
+              <span className="mt-2 text-xs text-white/50 uppercase tracking-widest font-semibold">
+                {scenarioLabel} case
+              </span>
+            )}
           </div>
 
           {currentPrice && (
             <div className="flex flex-col items-end">
               <span className="text-sm text-white/50 uppercase tracking-widest font-semibold mb-1">Upside</span>
-              <span className={`text-2xl font-mono ${((dcf.implied_price - currentPrice) / currentPrice) * 100 > 0 ? "text-green-400" : "text-red-400"}`}>
-                {(((dcf.implied_price - currentPrice) / currentPrice) * 100).toFixed(2)}%
+              <span className={`text-2xl font-mono ${(((typeof scenarioImpliedPrice === "number" ? scenarioImpliedPrice : dcf.implied_price) - currentPrice) / currentPrice) * 100 > 0 ? "text-green-400" : "text-red-400"}`}>
+                {((((typeof scenarioImpliedPrice === "number" ? scenarioImpliedPrice : dcf.implied_price) - currentPrice) / currentPrice) * 100).toFixed(2)}%
               </span>
             </div>
           )}
@@ -168,11 +221,25 @@ export function DCFView({ dcf, currentPrice, ticker }: DCFViewProps) {
           <div className="grid grid-cols-2 gap-4">
             <div className="glass p-4 rounded-xl border-white/5 flex flex-col justify-center">
               <span className="text-xs text-white/40 uppercase font-bold tracking-wider mb-2">Discount Rate (WACC)</span>
-              <span className="text-xl font-mono text-white/80 bg-white/10 p-2 rounded">{dcf.wacc ? (dcf.wacc * 100).toFixed(2) : '-'}%</span>
+              <span className="text-xl font-mono text-white/80 bg-white/10 p-2 rounded">
+                {dcf.wacc ? (dcf.wacc * 100).toFixed(2) : "-"}%
+                {scenarioWaccDelta !== undefined && (
+                  <span className="ml-2 text-sm text-white/40">
+                    ({scenarioWaccDelta >= 0 ? "+" : ""}{(scenarioWaccDelta * 100).toFixed(2)}%)
+                  </span>
+                )}
+              </span>
             </div>
             <div className="glass p-4 rounded-xl border-white/5 flex flex-col justify-center">
               <span className="text-xs text-white/40 uppercase font-bold tracking-wider mb-2">Terminal Growth (TGR)</span>
-              <span className="text-xl font-mono text-white/80 bg-white/10 p-2 rounded">{dcf.tgr ? (dcf.tgr * 100).toFixed(2) : '-'}%</span>
+              <span className="text-xl font-mono text-white/80 bg-white/10 p-2 rounded">
+                {dcf.tgr ? (dcf.tgr * 100).toFixed(2) : "-"}%
+                {scenarioTgrDelta !== undefined && (
+                  <span className="ml-2 text-sm text-white/40">
+                    ({scenarioTgrDelta >= 0 ? "+" : ""}{(scenarioTgrDelta * 100).toFixed(2)}%)
+                  </span>
+                )}
+              </span>
             </div>
           </div>
         )}

@@ -42,7 +42,7 @@ export function TickerSearch({ align = "center" }: TickerSearchProps) {
           <div className="relative group">
             <Info className="w-4 h-4 text-gray-400 hover:text-white" />
             <div className="invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 absolute -top-2 -right-52 w-64 bg-slate-900 text-xs text-white p-2 rounded-lg shadow-lg z-20">
-              Must be US company (NYSE/NASDAQ), `{'>'}`10B market cap, not financials, utilities, or real estate.
+              Must be US company (NYSE/NASDAQ), {">"}10B market cap, not financials, utilities, or real estate.
             </div>
           </div>
 

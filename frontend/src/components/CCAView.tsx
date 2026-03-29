@@ -11,9 +11,19 @@ interface CCAViewProps {
   cca: CCAModel;
   currentPrice?: number;
   ticker: string;
+  scenarioLabel?: string;
+  scenarioValue?: number;
+  scenarioPercentileLabel?: string;
 }
 
-export function CCAView({ cca, currentPrice, ticker }: CCAViewProps) {
+export function CCAView({
+  cca,
+  currentPrice,
+  ticker,
+  scenarioLabel,
+  scenarioValue,
+  scenarioPercentileLabel,
+}: CCAViewProps) {
   const [isDownloading, setIsDownloading] = useState(false);
 
   const handleDownload = async () => {
@@ -68,8 +78,14 @@ export function CCAView({ cca, currentPrice, ticker }: CCAViewProps) {
 
       <div className="flex items-center justify-between mb-12">
         <div className="flex flex-col">
-          <span className="text-sm text-white/50 uppercase tracking-widest font-semibold mb-1">Median Peer Implied</span>
-          <span className="text-4xl font-mono text-white">${median.toFixed(2)}</span>
+          <span className="text-5xl font-mono text-white">
+            ${((scenarioValue !== undefined ? scenarioValue : median) || 0).toFixed(2)}
+          </span>
+          {scenarioValue !== undefined && (
+            <span className="mt-3 text-xs text-white/50 uppercase tracking-widest font-semibold">
+              {scenarioLabel || "Scenario"}: {scenarioPercentileLabel || "Selected"} (${scenarioValue.toFixed(2)})
+            </span>
+          )}
         </div>
         
         {currentPrice && (
