@@ -1,6 +1,6 @@
 "use client";
 
-import { MouseEvent, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Target, TrendingDown, TrendingUp } from "lucide-react";
 import { API_BASE_URL } from "@/lib/api";
@@ -151,23 +151,12 @@ export default function HistoryPage() {
             {entries.map((entry, idx) => {
               const recommendation = entry.recommendation || "HOLD";
               const recStyles = recommendationStyles(recommendation);
-              const handleButtonClick = (event: MouseEvent<HTMLButtonElement>) => {
-                event.stopPropagation();
-                handleCardClick(entry);
-              };
               return (
-                <article
+                <button
                   key={`${entry.ticker}-${entry.timestamp}-${idx}`}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" || event.key === " ") {
-                      event.preventDefault();
-                      handleCardClick(entry);
-                    }
-                  }}
+                  type="button"
                   onClick={() => handleCardClick(entry)}
-                  className="glass-card p-6 text-left border border-white/10 hover:border-white/25 transition-all duration-300 hover:-translate-y-[2px] cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-white/40"
+                  className="glass-card p-6 text-left border border-white/10 hover:border-white/25 transition-all duration-300 hover:-translate-y-[2px]"
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div>
@@ -216,17 +205,7 @@ export default function HistoryPage() {
                       </p>
                     </div>
                   </div>
-
-                  <div className="mt-6 flex justify-end">
-                    <button
-                      type="button"
-                      onClick={handleButtonClick}
-                      className="glass px-4 py-2 rounded-full text-sm font-semibold tracking-widest text-black bg-white hover:scale-[1.02] transition"
-                    >
-                      View Result
-                    </button>
-                  </div>
-                </article>
+                </button>
               );
             })}
           </div>
