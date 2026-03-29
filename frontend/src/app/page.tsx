@@ -265,7 +265,9 @@ export default function Home() {
                     <p className="text-xs text-white/40 uppercase tracking-widest mb-2 font-bold">Weighted Fair Value</p>
                     <div className="flex items-center gap-4">
                       <div className="text-4xl font-mono text-white tracking-tight">
-                        ${valuationData.weighted_valuation?.toFixed(2) || "N/A"}
+                        {scenarioOutputs?.[scenario]?.weightedValue !== undefined
+                          ? `$${scenarioOutputs[scenario].weightedValue.toFixed(2)}`
+                          : `$${valuationData.weighted_valuation?.toFixed(2) || "N/A"}`}
                       </div>
                     </div>
                   </div>
@@ -289,7 +291,10 @@ export default function Home() {
               </div>
 
               {scenarioOutputs && (
-                <div className="flex items-center justify-end gap-2">
+                <div className="flex items-center justify-end gap-3">
+                  <span className="text-xs text-white/40 uppercase tracking-widest font-semibold">
+                    Select scenario
+                  </span>
                   {(["conservative", "base", "optimistic"] as const).map((key) => (
                     <Button
                       key={key}

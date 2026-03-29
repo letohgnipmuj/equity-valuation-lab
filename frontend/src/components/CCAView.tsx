@@ -45,7 +45,7 @@ export function CCAView({
   const median = cca.median || 0;
   const p25 = cca.range?.[0] || 0;
   const p75 = cca.range?.[1] || 0;
-  
+
   // Calculate relative ranges for a nice visual bar
   const minBound = Math.min(p25 * 0.8, currentPrice ? currentPrice * 0.8 : p25 * 0.8) || 0;
   const maxBound = Math.max(p75 * 1.2, currentPrice ? currentPrice * 1.2 : p75 * 1.2) || 100;
@@ -83,16 +83,16 @@ export function CCAView({
           </span>
           {scenarioValue !== undefined && (
             <span className="mt-3 text-xs text-white/50 uppercase tracking-widest font-semibold">
-              {scenarioLabel || "Scenario"}: {scenarioPercentileLabel || "Selected"} (${scenarioValue.toFixed(2)})
+              {scenarioLabel || "Scenario"}: {scenarioPercentileLabel || "Selected"}
             </span>
           )}
         </div>
-        
+
         {currentPrice && (
           <div className="flex flex-col items-end">
-            <span className="text-sm text-white/50 uppercase tracking-widest font-semibold mb-1">Upside to Median</span>
-            <span className={`text-2xl font-mono ${((median - currentPrice) / currentPrice) * 100 > 0 ? "text-green-400" : "text-red-400"}`}>
-              {(((median - currentPrice) / currentPrice) * 100).toFixed(2)}%
+            <span className="text-sm text-white/50 uppercase tracking-widest font-semibold mb-1">Upside</span>
+            <span className={`text-2xl font-mono ${(((scenarioValue !== undefined ? scenarioValue : median) - currentPrice) / currentPrice) * 100 > 0 ? "text-green-400" : "text-red-400"}`}>
+              {((((scenarioValue !== undefined ? scenarioValue : median) - currentPrice) / currentPrice) * 100).toFixed(2)}%
             </span>
           </div>
         )}
@@ -103,26 +103,26 @@ export function CCAView({
           <span>25th Percentile (${p25.toFixed(2)})</span>
           <span>75th Percentile (${p75.toFixed(2)})</span>
         </div>
-        
+
         <div className="relative h-4 w-full bg-black/40 rounded-full overflow-hidden border border-white/10">
           {/* 25th to 75th range bar */}
-          <div 
+          <div
             className="absolute top-0 bottom-0 bg-white/20 border-x border-white/40"
-            style={{ 
-              left: `${Math.max(0, p25Percent)}%`, 
-              width: `${Math.max(0, p75Percent - p25Percent)}%` 
+            style={{
+              left: `${Math.max(0, p25Percent)}%`,
+              width: `${Math.max(0, p75Percent - p25Percent)}%`
             }}
           />
-          
+
           {/* Median marker */}
-          <div 
+          <div
             className="absolute top-0 bottom-0 w-1 bg-white z-10 -ml-0.5 shadow-[0_0_10px_rgba(255,255,255,0.8)]"
             style={{ left: `${Math.max(0, Math.min(100, medianPercent))}%` }}
           />
 
           {/* Current Price marker */}
           {cpPercent !== null && (
-            <div 
+            <div
               className="absolute top-0 bottom-0 w-1 bg-blue-500 z-20 -ml-0.5 shadow-[0_0_10px_rgba(59,130,246,0.8)]"
               style={{ left: `${Math.max(0, Math.min(100, cpPercent))}%` }}
               title={`Current Price: $${currentPrice?.toFixed(2)}`}
@@ -131,9 +131,9 @@ export function CCAView({
         </div>
 
         <div className="mt-4 flex items-center justify-end space-x-4 text-xs">
-           <div className="flex items-center"><span className="w-3 h-3 bg-white rounded-full inline-block mr-2" /> Median Implied</div>
-           <div className="flex items-center"><span className="w-3 h-3 bg-white/20 border border-white/40 rounded-sm inline-block mr-2" /> Peer Range</div>
-           {currentPrice && <div className="flex items-center"><span className="w-3 h-3 bg-blue-500 rounded-full inline-block mr-2 shadow-[0_0_5px_rgba(59,130,246,1)]" /> Current Price</div>}
+          <div className="flex items-center"><span className="w-3 h-3 bg-white rounded-full inline-block mr-2" /> Median Implied</div>
+          <div className="flex items-center"><span className="w-3 h-3 bg-white/20 border border-white/40 rounded-sm inline-block mr-2" /> Peer Range</div>
+          {currentPrice && <div className="flex items-center"><span className="w-3 h-3 bg-blue-500 rounded-full inline-block mr-2 shadow-[0_0_5px_rgba(59,130,246,1)]" /> Current Price</div>}
         </div>
       </div>
     </div>

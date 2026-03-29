@@ -29,7 +29,7 @@ export function ReverseDCFView({ marketImplied }: ReverseDCFViewProps) {
       <div className="mb-6">
         <h3 className="text-xl tracking-tight font-medium text-white/90">Reverse DCF (Market-Implied)</h3>
         <p className="text-sm text-white/50 mt-1">
-          Growth rates required to justify the current share price under the DCF model.
+          Growth rates required to justify the current share price under the DCF model. Results are individual, ie the revenue growth assumes base case terminal growth, and the TGR assumes base case revenue growth. Use as a sanity check to see if market expectations seem reasonable or extreme.
         </p>
       </div>
 

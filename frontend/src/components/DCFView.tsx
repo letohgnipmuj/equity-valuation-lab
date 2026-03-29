@@ -55,7 +55,7 @@ export function DCFView({
     const yAxisData = dcf.sensitivity.index.map((val: number) => `${(val * 100).toFixed(1)}%`); // TGR
     const xAxisData = dcf.sensitivity.columns.map((val: number) => `${(val * 100).toFixed(1)}%`); // WACC
 
-    const data: [number, number, number | string][] = [];
+    const data: Array<[number, number, number | string] | { value: [number, number, number | string]; itemStyle: { borderColor: string; borderWidth: number } }> = [];
     let minVal = Infinity;
     let maxVal = -Infinity;
 
@@ -72,25 +72,46 @@ export function DCFView({
       return bestIdx;
     };
 
-    dcf.sensitivity.data.forEach((row: any[], yIdx: number) => {
-      row.forEach((val, xIdx) => {
-        const v = typeof val === 'number' ? val : parseFloat(val);
-        if (!isNaN(v)) {
-          data.push([xIdx, yIdx, v]);
-          if (v < minVal) minVal = v;
-          if (v > maxVal) maxVal = v;
-        } else {
-          data.push([xIdx, yIdx, "-"]);
-        }
-      });
-    });
-
     let highlightPoint: [number, number] | null = null;
     if (scenarioWacc !== undefined && scenarioTgr !== undefined) {
       const tgrIndex = getNearestIndex(dcf.sensitivity.index, scenarioTgr);
       const waccIndex = getNearestIndex(dcf.sensitivity.columns, scenarioWacc);
       highlightPoint = [waccIndex, tgrIndex];
     }
+
+    dcf.sensitivity.data.forEach((row: any[], yIdx: number) => {
+      row.forEach((val, xIdx) => {
+        const v = typeof val === 'number' ? val : parseFloat(val);
+        const isHighlight = highlightPoint && highlightPoint[0] === xIdx && highlightPoint[1] === yIdx;
+        if (!isNaN(v)) {
+          if (isHighlight) {
+            data.push({
+              value: [xIdx, yIdx, v],
+              itemStyle: {
+                borderColor: 'rgba(255,255,255,0.9)',
+                borderWidth: 2
+              }
+            });
+          } else {
+            data.push([xIdx, yIdx, v]);
+          }
+          if (v < minVal) minVal = v;
+          if (v > maxVal) maxVal = v;
+        } else {
+          if (isHighlight) {
+            data.push({
+              value: [xIdx, yIdx, "-"],
+              itemStyle: {
+                borderColor: 'rgba(255,255,255,0.9)',
+                borderWidth: 2
+              }
+            });
+          } else {
+            data.push([xIdx, yIdx, "-"]);
+          }
+        }
+      });
+    });
 
     return {
       tooltip: {
@@ -159,17 +180,6 @@ export function DCFView({
             shadowColor: 'rgba(0, 0, 0, 0.5)'
           }
         },
-        markPoint: highlightPoint ? {
-          symbol: 'rect',
-          symbolSize: 22,
-          data: [{ coord: highlightPoint }],
-          itemStyle: {
-            color: 'transparent',
-            borderColor: 'rgba(255,255,255,0.9)',
-            borderWidth: 2
-          },
-          label: { show: false }
-        } : undefined
       }]
     };
   }, [dcf, scenarioTgr, scenarioWacc]);
