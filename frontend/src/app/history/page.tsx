@@ -1,15 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { MouseEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Target, TrendingDown, TrendingUp } from "lucide-react";
 import { API_BASE_URL } from "@/lib/api";
 import { useValuation, ValuationData } from "@/contexts/ValuationContext";
-
-export const metadata = {
-  title: 'History',
-  description: 'Browse  past equity valuations.',
-}
 
 interface ValuationHistoryResponse {
   entries: ValuationData[];
@@ -113,8 +108,8 @@ export default function HistoryPage() {
           Past Valuation Results
         </h2>
         <p className="text-lg text-white/50 max-w-3xl leading-relaxed mt-4">
-          Browse successful analyses from recent ticker runs. Selecting a card loads that stored
-          result into the main dashboard instantly.
+          Browse analyses of recent ticker valuations. Select a card to load that stored
+          result into the main dashboard.
         </p>
       </section>
 
@@ -156,12 +151,23 @@ export default function HistoryPage() {
             {entries.map((entry, idx) => {
               const recommendation = entry.recommendation || "HOLD";
               const recStyles = recommendationStyles(recommendation);
+              const handleButtonClick = (event: MouseEvent<HTMLButtonElement>) => {
+                event.stopPropagation();
+                handleCardClick(entry);
+              };
               return (
-                <button
+                <article
                   key={`${entry.ticker}-${entry.timestamp}-${idx}`}
-                  type="button"
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      handleCardClick(entry);
+                    }
+                  }}
                   onClick={() => handleCardClick(entry)}
-                  className="glass-card p-6 text-left border border-white/10 hover:border-white/25 transition-all duration-300 hover:-translate-y-[2px]"
+                  className="glass-card p-6 text-left border border-white/10 hover:border-white/25 transition-all duration-300 hover:-translate-y-[2px] cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-white/40"
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div>
@@ -210,7 +216,17 @@ export default function HistoryPage() {
                       </p>
                     </div>
                   </div>
-                </button>
+
+                  <div className="mt-6 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={handleButtonClick}
+                      className="glass px-4 py-2 rounded-full text-sm font-semibold tracking-widest text-black bg-white hover:scale-[1.02] transition"
+                    >
+                      View Result
+                    </button>
+                  </div>
+                </article>
               );
             })}
           </div>
