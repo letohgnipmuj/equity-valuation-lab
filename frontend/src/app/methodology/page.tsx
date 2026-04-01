@@ -1,13 +1,13 @@
 export default function MethodologyPage() {
   return (
-    <main className="w-full max-w-6xl mx-auto px-8 pb-16 pt-6">
-      <section className="glass-card p-10">
-        <div className="flex justify-between items-start mb-3">
+    <main className="w-full max-w-6xl mx-auto px-4 sm:px-6 md:px-8 pb-12 md:pb-16 pt-4 md:pt-6">
+      <section className="glass-card p-6 sm:p-8 md:p-10">
+        <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-4 mb-3">
           <div>
             <p className="text-xs uppercase tracking-[0.3em] text-white/40 mb-0">
               Methodology
             </p>
-            <h2 className="text-4xl lg:text-5xl font-bold tracking-tight text-white mb-4 mt-3">
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight text-white mb-4 mt-3">
               How the Model Works
             </h2>
           </div>
@@ -18,15 +18,15 @@ export default function MethodologyPage() {
             View on GitHub
           </a>
         </div>
-        <p className="text-lg text-white/50 max-w-2xl leading-relaxed">
+        <p className="text-base md:text-lg text-white/50 max-w-2xl leading-relaxed">
           This platform combines multiple valuation approaches to estimate a
           company&apos;s intrinsic value and compare it to the current market
           price. Each method captures a different perspective on value. <br /> Not financial advice, just a tool to make common modeling techniques easier.
         </p>
       </section>
 
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-10">
-        <div className="glass-card p-8">
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 mt-8 md:mt-10">
+        <div className="glass-card p-6 md:p-8">
           <h3 className="text-xl font-semibold text-white mb-4">
             Discounted Cash Flow (DCF)
           </h3>
@@ -37,7 +37,7 @@ export default function MethodologyPage() {
           </ul>
         </div>
 
-        <div className="glass-card p-8">
+        <div className="glass-card p-6 md:p-8">
           <h3 className="text-xl font-semibold text-white mb-4">
             Comparable Company Analysis (CCA)
           </h3>
@@ -49,7 +49,7 @@ export default function MethodologyPage() {
           </ul>
         </div>
 
-        <div className="glass-card p-8">
+        <div className="glass-card p-6 md:p-8">
           <h3 className="text-xl font-semibold text-white mb-4">
             Reverse DCF (Market-Implied Expectations)
           </h3>
@@ -61,7 +61,7 @@ export default function MethodologyPage() {
           </ul>
         </div>
 
-        <div className="glass-card p-8">
+        <div className="glass-card p-6 md:p-8">
           <h3 className="text-xl font-semibold text-white mb-4">
             Monte Carlo Simulation
           </h3>
@@ -73,7 +73,7 @@ export default function MethodologyPage() {
           </ul>
         </div>
 
-        <div className="glass-card p-8">
+        <div className="glass-card p-6 md:p-8">
           <h3 className="text-xl font-semibold text-white mb-4">
             Combined Valuation Approach
           </h3>
@@ -85,7 +85,7 @@ export default function MethodologyPage() {
           </ul>
         </div>
 
-        <div className="glass-card p-8">
+        <div className="glass-card p-6 md:p-8">
           <h3 className="text-xl font-semibold text-white mb-4">
             Model Guardrails
           </h3>

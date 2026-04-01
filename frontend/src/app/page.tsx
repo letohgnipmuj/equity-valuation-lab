@@ -209,18 +209,18 @@ export default function Home() {
   }, [scenarioConfig, valuationData]);
 
   return (
-    <main className="min-h-screen relative flex flex-col items-center p-8 transition-all duration-700">
+    <main className="min-h-screen relative flex flex-col items-center p-4 sm:p-6 md:p-8 transition-all duration-700">
       {/* Main Content Area */}
-      <div className={`w-full max-w-7xl mx-auto flex flex-col gap-16 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${valuationData ? 'pt-0' : 'pt-[20vh] items-center'}`}>
+      <div className={`w-full max-w-7xl mx-auto flex flex-col gap-8 md:gap-16 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${valuationData ? 'pt-0' : 'pt-[14vh] sm:pt-[18vh] md:pt-[20vh] items-center'}`}>
 
         {/* Search Bar - Center aligned initially, moves to top contextually when data loads? We can just keep it elegantly centered/topped */}
-        <div className={`w-full transition-all duration-700 ${showResults ? 'max-w-xl mx-0 mb-12' : 'max-w-2xl text-center'}`}>
+        <div className={`w-full transition-all duration-700 ${showResults ? 'max-w-xl mx-0 mb-8 md:mb-12' : 'max-w-2xl text-center'}`}>
           {!valuationData && (
-            <div className="mb-12 space-y-4">
-              <h2 className="text-5xl lg:text-7xl font-bold tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-white/50 leading-[1.1] pb-3">
+            <div className="mb-8 md:mb-12 space-y-3 md:space-y-4">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-bold tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-white/50 leading-[1.1] pb-3">
                 Probabalistic Equity<br />Valuation Engine
               </h2>
-              <p className="text-lg text-white/40 max-w-lg mx-auto leading-[1.25] pb10">
+              <p className="text-base md:text-lg text-white/40 max-w-lg mx-auto leading-[1.25] pb10">
                 Automated DCF, Comparable Company Analysis, and Monte Carlo simulations synthesized in seconds.
               </p>
             </div>
@@ -244,27 +244,27 @@ export default function Home() {
         {showResults && valuationData && (
           <div className="w-full flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-8 duration-700">
             {/* Header / Summary Card */}
-            <div className="glass-card p-8 flex flex-col gap-6">
-              <div className="flex flex-col md:flex-row justify-between items-center gap-8">
+            <div className="glass-card p-5 sm:p-6 md:p-8 flex flex-col gap-6">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 md:gap-8">
                 <div className="flex-1">
-                  <h2 className="text-5xl font-bold text-white tracking-tight">{valuationData.ticker}</h2>
-                  <p className="text-xl text-white/50 mt-1">{valuationData.name}</p>
+                  <h2 className="text-3xl md:text-5xl font-bold text-white tracking-tight">{valuationData.ticker}</h2>
+                  <p className="text-base md:text-xl text-white/50 mt-1">{valuationData.name}</p>
                 </div>
 
-                <div className="flex items-center gap-12">
-                  <div className="text-right">
+                <div className="w-full md:w-auto grid grid-cols-1 sm:grid-cols-2 lg:flex lg:items-center gap-4 sm:gap-6 lg:gap-12">
+                  <div className="text-left sm:text-right">
                     <p className="text-xs text-white/40 uppercase tracking-widest mb-2 font-bold">Current Price</p>
-                    <div className="text-4xl font-mono text-white tracking-tight">
+                    <div className="text-2xl md:text-4xl font-mono text-white tracking-tight">
                       ${valuationData.current_price?.toFixed(2) || "N/A"}
                     </div>
                   </div>
 
-                  <div className="h-16 w-px bg-white/10" />
+                  <div className="hidden lg:block h-16 w-px bg-white/10" />
 
-                  <div className="text-right">
+                  <div className="text-left sm:text-right">
                     <p className="text-xs text-white/40 uppercase tracking-widest mb-2 font-bold">Weighted Fair Value</p>
                     <div className="flex items-center gap-4">
-                      <div className="text-4xl font-mono text-white tracking-tight">
+                      <div className="text-2xl md:text-4xl font-mono text-white tracking-tight">
                         {scenarioOutputs?.[scenario]?.weightedValue !== undefined
                           ? `$${scenarioOutputs[scenario].weightedValue.toFixed(2)}`
                           : `$${valuationData.weighted_valuation?.toFixed(2) || "N/A"}`}
@@ -272,15 +272,15 @@ export default function Home() {
                     </div>
                   </div>
 
-                  <div className="h-16 w-px bg-white/10" />
+                  <div className="hidden lg:block h-16 w-px bg-white/10" />
 
-                  <div className="text-right">
+                  <div className="text-left sm:text-right">
                     <p className="text-xs text-white/40 uppercase tracking-widest mb-2 font-bold">Action</p>
-                    <div className="flex items-center justify-end gap-2">
+                    <div className="flex items-center justify-start sm:justify-end gap-2">
                       {valuationData.recommendation === "BUY" && <TrendingUp className="w-8 h-8 text-green-400" />}
                       {valuationData.recommendation === "SELL" && <TrendingDown className="w-8 h-8 text-red-400" />}
                       {valuationData.recommendation === "HOLD" && <Target className="w-8 h-8 text-yellow-500" />}
-                      <div className={`text-4xl font-bold tracking-tight uppercase ${valuationData.recommendation === "BUY" ? "text-green-400" :
+                      <div className={`text-2xl md:text-4xl font-bold tracking-tight uppercase ${valuationData.recommendation === "BUY" ? "text-green-400" :
                         valuationData.recommendation === "SELL" ? "text-red-400" : "text-yellow-500"
                         }`}>
                         {valuationData.recommendation || "N/A"}
@@ -291,22 +291,24 @@ export default function Home() {
               </div>
 
               {scenarioOutputs && (
-                <div className="flex items-center justify-end gap-3">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between md:justify-end gap-3">
                   <span className="text-xs text-white/40 uppercase tracking-widest font-semibold">
                     Select scenario
                   </span>
-                  {(["conservative", "base", "optimistic"] as const).map((key) => (
-                    <Button
-                      key={key}
-                      type="button"
-                      variant={scenario === key ? "secondary" : "outline"}
-                      size="sm"
-                      onClick={() => setScenario(key)}
-                      className="border-white/20 bg-white/5 text-white hover:bg-white/10"
-                    >
-                      {scenarioOutputs[key].label}
-                    </Button>
-                  ))}
+                  <div className="flex w-full sm:w-auto flex-wrap gap-2">
+                    {(["conservative", "base", "optimistic"] as const).map((key) => (
+                      <Button
+                        key={key}
+                        type="button"
+                        variant={scenario === key ? "secondary" : "outline"}
+                        size="sm"
+                        onClick={() => setScenario(key)}
+                        className="border-white/20 bg-white/5 text-white hover:bg-white/10 flex-1 sm:flex-none"
+                      >
+                        {scenarioOutputs[key].label}
+                      </Button>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>

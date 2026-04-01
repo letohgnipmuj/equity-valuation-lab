@@ -185,12 +185,12 @@ export function DCFView({
   }, [dcf, scenarioTgr, scenarioWacc]);
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 items-start">
       <div className="space-y-6">
-        <div className="flex items-center justify-between gap-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6">
           <div>
             <h3 className="text-xl tracking-tight font-medium text-white/90">Discounted Cash Flow</h3>
-            <p className="text-sm text-white/50 mt-1 mb-6">Implied fair value based on estimated future cash flows.</p>
+            <p className="text-sm text-white/50 mt-1">Implied fair value based on estimated future cash flows.</p>
           </div>
           <Button
             type="button"
@@ -198,16 +198,16 @@ export function DCFView({
             size="sm"
             onClick={handleDownload}
             disabled={isDownloading}
-            className="border-white/20 bg-white/5 text-white hover:bg-white/10"
+            className="border-white/20 bg-white/5 text-white hover:bg-white/10 w-full sm:w-auto"
           >
             <Download className="w-4 h-4" />
             {isDownloading ? "Exporting..." : "Export DCF"}
           </Button>
         </div>
 
-        <div className="glass p-6 rounded-2xl flex items-center justify-between border-white/5">
+        <div className="glass p-5 sm:p-6 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-white/5">
           <div className="flex flex-col">
-            <span className="text-5xl font-mono text-white">
+            <span className="text-3xl sm:text-4xl md:text-5xl font-mono text-white">
               ${((typeof scenarioImpliedPrice === "number" ? scenarioImpliedPrice : dcf.implied_price) || 0).toFixed(2)}
             </span>
             {scenarioLabel && (
@@ -218,7 +218,7 @@ export function DCFView({
           </div>
 
           {currentPrice && (
-            <div className="flex flex-col items-end">
+            <div className="flex flex-col sm:items-end">
               <span className="text-sm text-white/50 uppercase tracking-widest font-semibold mb-1">Upside</span>
               <span className={`text-2xl font-mono ${(((typeof scenarioImpliedPrice === "number" ? scenarioImpliedPrice : dcf.implied_price) - currentPrice) / currentPrice) * 100 > 0 ? "text-green-400" : "text-red-400"}`}>
                 {((((typeof scenarioImpliedPrice === "number" ? scenarioImpliedPrice : dcf.implied_price) - currentPrice) / currentPrice) * 100).toFixed(2)}%
@@ -228,7 +228,7 @@ export function DCFView({
         </div>
 
         {dcf.assumptions && (
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="glass p-4 rounded-xl border-white/5 flex flex-col justify-center overflow-visible">
               <div className="flex items-center gap-2">
                 <span className="text-xs text-white/40 uppercase font-bold tracking-wider">Discount Rate (WACC)</span>
@@ -271,7 +271,7 @@ export function DCFView({
         )}
       </div>
 
-      <div className="glass p-6 rounded-2xl border-white/5 h-full min-h-[450px] flex flex-col">
+      <div className="glass p-5 sm:p-6 rounded-2xl border-white/5 h-full min-h-[360px] md:min-h-[450px] flex flex-col overflow-x-auto">
         <h4 className="text-sm font-semibold tracking-wider text-white/40 uppercase mb-6 text-center">Sensitivity Matrix</h4>
 
         {chartOptions ? (

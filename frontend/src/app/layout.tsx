@@ -31,18 +31,19 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased overflow-x-hidden`}
         suppressHydrationWarning
       >
         <ValuationProvider>
           <div className="min-h-screen relative flex flex-col">
             <div className="fixed inset-0 pointer-events-none -z-10 bg-gradient-to-br from-black via-zinc-950 to-[#0A0A0A]"></div>
 
-            <header className="w-full max-w-7xl mx-auto flex items-center justify-between px-8 pt-8 pb-4">
-              <Link href="/" className="text-2xl font-semibold tracking-tighter text-white/90">
+            <header className="w-full max-w-7xl mx-auto flex items-center justify-between px-4 sm:px-6 md:px-8 pt-5 md:pt-8 pb-4">
+              <Link href="/" className="text-xl sm:text-2xl font-semibold tracking-tighter text-white/90">
                 Equity Valuation <span className="text-white/90">Lab</span>
               </Link>
-              <nav className="flex items-center gap-3">
+
+              <nav className="hidden md:flex items-center gap-3">
                 <Link
                   href="/"
                   className="glass px-4 py-2 rounded-lg text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 transition"
@@ -62,6 +63,32 @@ export default function RootLayout({
                   Methodology
                 </Link>
               </nav>
+
+              <details className="md:hidden relative">
+                <summary className="list-none glass rounded-lg px-3 py-2 text-sm font-medium text-white/90 cursor-pointer select-none">
+                  Menu
+                </summary>
+                <nav className="absolute right-0 top-12 z-50 w-44 glass rounded-xl p-2 flex flex-col gap-1">
+                  <Link
+                    href="/"
+                    className="px-3 py-2 rounded-lg text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 transition"
+                  >
+                    Home
+                  </Link>
+                  <Link
+                    href="/history"
+                    className="px-3 py-2 rounded-lg text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 transition"
+                  >
+                    History
+                  </Link>
+                  <Link
+                    href="/methodology"
+                    className="px-3 py-2 rounded-lg text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 transition"
+                  >
+                    Methodology
+                  </Link>
+                </nav>
+              </details>
             </header>
 
             {children}

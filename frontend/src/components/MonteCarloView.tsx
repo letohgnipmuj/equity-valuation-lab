@@ -38,7 +38,7 @@ export function MonteCarloView({ monteCarlo, currentPrice, ticker }: MonteCarloV
 
   if (median === 0 || isNaN(median)) {
     return (
-      <div className="glass p-8 rounded-2xl border-white/5 w-full flex items-center justify-center min-h-[300px] text-white/50">
+      <div className="glass p-5 sm:p-6 md:p-8 rounded-2xl border-white/5 w-full flex items-center justify-center min-h-[300px] text-white/50">
         <p>Monte Carlo simulation data unavailable.</p>
       </div>
     );
@@ -58,8 +58,8 @@ export function MonteCarloView({ monteCarlo, currentPrice, ticker }: MonteCarloV
   const rangeWidth = Math.max(0, p75Percent - p25Percent);
 
   return (
-    <div className="glass p-8 rounded-2xl border-white/5 w-full flex flex-col justify-between">
-      <div className="mb-4 flex items-center justify-between gap-6">
+    <div className="glass p-5 sm:p-6 md:p-8 rounded-2xl border-white/5 w-full flex flex-col justify-between">
+      <div className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6">
         <div>
           <div className="flex items-center space-x-3 mb-1">
             <Activity className="w-5 h-5 text-purple-400" />
@@ -73,21 +73,21 @@ export function MonteCarloView({ monteCarlo, currentPrice, ticker }: MonteCarloV
           size="sm"
           onClick={handleDownload}
           disabled={isDownloading}
-          className="border-white/20 bg-white/5 text-white hover:bg-white/10"
+          className="border-white/20 bg-white/5 text-white hover:bg-white/10 w-full sm:w-auto"
         >
           <Download className="w-4 h-4" />
           {isDownloading ? "Exporting..." : "Export PNG"}
         </Button>
       </div>
 
-      <div className="flex items-center justify-between my-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 my-6 md:my-8">
         <div className="flex flex-col border-l-2 border-purple-500/50 pl-4">
           <span className="text-sm text-white/50 uppercase tracking-widest font-semibold mb-1">Simulated Median</span>
           <span className="text-3xl lg:text-4xl font-mono text-white">${median.toFixed(2)}</span>
         </div>
 
         {currentPrice && (
-          <div className="flex flex-col items-end">
+          <div className="flex flex-col sm:items-end">
             <span className="text-sm text-white/50 uppercase tracking-widest font-semibold mb-1">Conviction</span>
             <span className={`text-2xl font-mono ${((median - currentPrice) / currentPrice) * 100 > 0 ? "text-green-400" : "text-red-400"}`}>
               {(((median - currentPrice) / currentPrice) * 100 > 0) ? "Bullish" : "Bearish"}

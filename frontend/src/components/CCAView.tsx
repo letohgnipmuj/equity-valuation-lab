@@ -57,8 +57,8 @@ export function CCAView({
   const cpPercent = currentPrice && totalRange > 0 ? ((currentPrice - minBound) / totalRange) * 100 : null;
 
   return (
-    <div className="glass p-8 rounded-2xl border-white/5 w-full flex flex-col justify-between">
-      <div className="mb-8 flex items-center justify-between gap-6">
+    <div className="glass p-5 sm:p-6 md:p-8 rounded-2xl border-white/5 w-full flex flex-col justify-between">
+      <div className="mb-6 md:mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6">
         <div>
           <h3 className="text-xl tracking-tight font-medium text-white/90">Comparable Company Analysis</h3>
           <p className="text-sm text-white/50 mt-1">Valuation implied by industry peer multiples.</p>
@@ -69,16 +69,16 @@ export function CCAView({
           size="sm"
           onClick={handleDownload}
           disabled={isDownloading}
-          className="border-white/20 bg-white/5 text-white hover:bg-white/10"
+          className="border-white/20 bg-white/5 text-white hover:bg-white/10 w-full sm:w-auto"
         >
           <Download className="w-4 h-4" />
           {isDownloading ? "Exporting..." : "Export CCA"}
         </Button>
       </div>
 
-      <div className="flex items-center justify-between mb-12">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 md:mb-12">
         <div className="flex flex-col">
-          <span className="text-5xl font-mono text-white">
+          <span className="text-3xl sm:text-4xl md:text-5xl font-mono text-white">
             ${((scenarioValue !== undefined ? scenarioValue : median) || 0).toFixed(2)}
           </span>
           {scenarioValue !== undefined && (
@@ -89,7 +89,7 @@ export function CCAView({
         </div>
 
         {currentPrice && (
-          <div className="flex flex-col items-end">
+          <div className="flex flex-col sm:items-end">
             <span className="text-sm text-white/50 uppercase tracking-widest font-semibold mb-1">Upside</span>
             <span className={`text-2xl font-mono ${(((scenarioValue !== undefined ? scenarioValue : median) - currentPrice) / currentPrice) * 100 > 0 ? "text-green-400" : "text-red-400"}`}>
               {((((scenarioValue !== undefined ? scenarioValue : median) - currentPrice) / currentPrice) * 100).toFixed(2)}%
@@ -130,7 +130,7 @@ export function CCAView({
           )}
         </div>
 
-        <div className="mt-4 flex items-center justify-end space-x-4 text-xs">
+        <div className="mt-4 flex flex-wrap items-center justify-start sm:justify-end gap-x-4 gap-y-2 text-xs">
           <div className="flex items-center"><span className="w-3 h-3 bg-white rounded-full inline-block mr-2" /> Median Implied</div>
           <div className="flex items-center"><span className="w-3 h-3 bg-white/20 border border-white/40 rounded-sm inline-block mr-2" /> Peer Range</div>
           {currentPrice && <div className="flex items-center"><span className="w-3 h-3 bg-blue-500 rounded-full inline-block mr-2 shadow-[0_0_5px_rgba(59,130,246,1)]" /> Current Price</div>}

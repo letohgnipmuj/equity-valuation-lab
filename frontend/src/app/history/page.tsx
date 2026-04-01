@@ -101,13 +101,13 @@ export default function HistoryPage() {
   };
 
   return (
-    <main className="w-full max-w-6xl mx-auto px-8 pb-16 pt-6">
-      <section className="glass-card p-10">
+    <main className="w-full max-w-6xl mx-auto px-4 sm:px-6 md:px-8 pb-12 md:pb-16 pt-4 md:pt-6">
+      <section className="glass-card p-6 sm:p-8 md:p-10">
         <p className="text-xs uppercase tracking-[0.3em] text-white/40 mb-0">History</p>
-        <h2 className="text-4xl lg:text-5xl font-bold tracking-tight text-white mt-3">
+        <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight text-white mt-3">
           Past Valuation Results
         </h2>
-        <p className="text-lg text-white/50 max-w-3xl leading-relaxed mt-4">
+        <p className="text-base md:text-lg text-white/50 max-w-3xl leading-relaxed mt-4">
           Browse analyses of recent ticker valuations. Select a card to load that stored
           result into the main dashboard.
         </p>
@@ -127,10 +127,10 @@ export default function HistoryPage() {
         {!error && isLoading && (
           <div className="grid grid-cols-1 gap-4">
             {Array.from({ length: 3 }).map((_, idx) => (
-              <div key={idx} className="glass-card p-6 animate-pulse">
+              <div key={idx} className="glass-card p-5 md:p-6 animate-pulse">
                 <div className="h-6 w-20 bg-white/10 rounded" />
                 <div className="h-4 w-40 bg-white/10 rounded mt-4" />
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
                   {Array.from({ length: 4 }).map((__, metricIdx) => (
                     <div key={metricIdx} className="h-10 bg-white/10 rounded" />
                   ))}
@@ -156,11 +156,11 @@ export default function HistoryPage() {
                   key={`${entry.ticker}-${entry.timestamp}-${idx}`}
                   type="button"
                   onClick={() => handleCardClick(entry)}
-                  className="glass-card p-6 text-left border border-white/10 hover:border-white/25 transition-all duration-300 hover:-translate-y-[2px]"
+                  className="glass-card p-5 md:p-6 text-left border border-white/10 hover:border-white/25 transition-all duration-300 hover:-translate-y-[2px]"
                 >
-                  <div className="flex items-start justify-between gap-4">
+                  <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
                     <div>
-                      <h3 className="text-3xl font-bold text-white tracking-tight">{entry.ticker}</h3>
+                      <h3 className="text-2xl md:text-3xl font-bold text-white tracking-tight">{entry.ticker}</h3>
                       <p className="text-sm text-white/50 mt-1">{formatTimestamp(entry.timestamp)}</p>
                     </div>
                     <div className={`inline-flex items-center gap-2 border rounded-full px-3 py-1 ${recStyles.badge}`}>
@@ -171,7 +171,7 @@ export default function HistoryPage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
                     <div className="bg-white/5 rounded-xl p-4 border border-white/10">
                       <p className="text-[10px] uppercase tracking-[0.2em] text-white/40 mb-1">
                         Weighted Value

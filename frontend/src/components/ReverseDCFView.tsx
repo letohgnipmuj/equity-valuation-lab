@@ -18,14 +18,14 @@ export function ReverseDCFView({ marketImplied }: ReverseDCFViewProps) {
 
   if (revenueGrowth == null && tgr == null) {
     return (
-      <div className="glass p-8 rounded-2xl border-white/5 w-full flex items-center justify-center text-white/50 min-h-[220px]">
+      <div className="glass p-5 sm:p-6 md:p-8 rounded-2xl border-white/5 w-full flex items-center justify-center text-white/50 min-h-[220px]">
         <p>Reverse DCF data unavailable.</p>
       </div>
     );
   }
 
   return (
-    <div className="glass p-8 rounded-2xl border-white/5 w-full">
+    <div className="glass p-5 sm:p-6 md:p-8 rounded-2xl border-white/5 w-full">
       <div className="mb-6">
         <h3 className="text-xl tracking-tight font-medium text-white/90">Reverse DCF (Market-Implied)</h3>
         <p className="text-sm text-white/50 mt-1">
