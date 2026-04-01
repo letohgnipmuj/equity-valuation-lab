@@ -234,7 +234,7 @@ export function DCFView({
                 <span className="text-xs text-white/40 uppercase font-bold tracking-wider">Discount Rate (WACC)</span>
                 <div className="relative group">
                   <Info className="w-3.5 h-3.5 text-white/40 hover:text-white" />
-                  <div className="invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 absolute -top-14 left-1/2 -translate-x-1/2 w-72 bg-slate-900 text-xxs text-white p-2 rounded-lg shadow-lg z-50">
+                  <div className="invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 absolute -top-14 left-1/2 -translate-x-1/2 w-48 bg-slate-900 text-xxs text-white p-2 rounded-lg shadow-lg z-[9999]">
                     WACC: Weighted cost of equity (expected return via CAPM) and cost of debt (interest).
                   </div>
                 </div>
@@ -253,7 +253,7 @@ export function DCFView({
                 <span className="text-xs text-white/40 uppercase font-bold tracking-wider">Terminal Growth (TGR)</span>
                 <div className="relative group">
                   <Info className="w-3.5 h-3.5 text-white/40 hover:text-white" />
-                  <div className="invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 absolute -top-14 left-1/2 -translate-x-1/2 w-72 bg-slate-900 text-xxs text-white p-2 rounded-lg shadow-lg z-50">
+                  <div className="invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 absolute -top-14 left-1/2 -translate-x-1/2 w-48 bg-slate-900 text-xxs text-white p-2 rounded-lg shadow-lg z-[9999]">
                     TGR: Assumed growth rate of the company into perpetuity, calculated as ROIC * reinvestment rate.
                   </div>
                 </div>
