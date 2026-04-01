@@ -229,18 +229,18 @@ export function DCFView({
 
         {dcf.assumptions && (
           <div className="grid grid-cols-2 gap-4">
-            <div className="glass p-4 rounded-xl border-white/5 flex flex-col justify-center">
-              <div className="flex items-center gap-1">
-              <span className="text-xs text-white/40 uppercase font-bold tracking-wider mb-2">Discount Rate (WACC)</span>
-              <div className="relative group">
-                <Info className="w-3.5 h-3.5 text-gray-300 hover:text-white" />
-                <div className="invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 absolute -top-1.5 left-full ml-2 w-72 bg-slate-900 text-xxs text-white p-2 rounded-lg shadow-lg z-20">
-                  WACC: Weighted cost of equity (expected return via CAPM) and cost of debt (interest).
+            <div className="glass p-4 rounded-xl border-white/5 flex flex-col justify-center overflow-visible">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-white/40 uppercase font-bold tracking-wider">Discount Rate (WACC)</span>
+                <div className="relative group">
+                  <Info className="w-3.5 h-3.5 text-white/40 hover:text-white" />
+                  <div className="invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 absolute -top-14 left-1/2 -translate-x-1/2 w-72 bg-slate-900 text-xxs text-white p-2 rounded-lg shadow-lg z-50">
+                    WACC: Weighted cost of equity (expected return via CAPM) and cost of debt (interest).
+                  </div>
                 </div>
               </div>
-            </div>
-            <span className="text-xl font-mono text-white/80 bg-white/10 p-2 rounded">
-              {dcf.wacc ? (dcf.wacc * 100).toFixed(2) : "-"}%
+              <span className="text-xl font-mono text-white/80 bg-white/10 p-2 rounded">
+                {dcf.wacc ? (dcf.wacc * 100).toFixed(2) : "-"}%
                 {scenarioWaccDelta !== undefined && (
                   <span className="ml-2 text-sm text-white/40">
                     ({scenarioWaccDelta >= 0 ? "+" : ""}{(scenarioWaccDelta * 100).toFixed(2)}%)
@@ -248,18 +248,18 @@ export function DCFView({
                 )}
               </span>
             </div>
-            <div className="glass p-4 rounded-xl border-white/5 flex flex-col justify-center">
-              <div className="flex items-center gap-1">
-              <span className="text-xs text-white/40 uppercase font-bold tracking-wider mb-2">Terminal Growth (TGR)</span>
-              <div className="relative group">
-                <Info className="w-3.5 h-3.5 text-gray-300 hover:text-white" />
-                <div className="invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 absolute -top-1.5 left-full ml-2 w-72 bg-slate-900 text-xxs text-white p-2 rounded-lg shadow-lg z-20">
-                  TGR: Assumed growth rate of the company into perpetuity, calculated as ROIC * reinvestment rate.
+            <div className="glass p-4 rounded-xl border-white/5 flex flex-col justify-center overflow-visible">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-white/40 uppercase font-bold tracking-wider">Terminal Growth (TGR)</span>
+                <div className="relative group">
+                  <Info className="w-3.5 h-3.5 text-white/40 hover:text-white" />
+                  <div className="invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 absolute -top-14 left-1/2 -translate-x-1/2 w-72 bg-slate-900 text-xxs text-white p-2 rounded-lg shadow-lg z-50">
+                    TGR: Assumed growth rate of the company into perpetuity, calculated as ROIC * reinvestment rate.
+                  </div>
                 </div>
               </div>
-            </div>
-            <span className="text-xl font-mono text-white/80 bg-white/10 p-2 rounded">
-              {dcf.tgr ? (dcf.tgr * 100).toFixed(2) : "-"}%
+              <span className="text-xl font-mono text-white/80 bg-white/10 p-2 rounded">
+                {dcf.tgr ? (dcf.tgr * 100).toFixed(2) : "-"}%
                 {scenarioTgrDelta !== undefined && (
                   <span className="ml-2 text-sm text-white/40">
                     ({scenarioTgrDelta >= 0 ? "+" : ""}{(scenarioTgrDelta * 100).toFixed(2)}%)
