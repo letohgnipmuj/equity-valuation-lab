@@ -26,7 +26,7 @@ export function MonteCarloView({ monteCarlo, currentPrice, ticker }: MonteCarloV
         `${API_BASE_URL}/api/exports/monte-carlo/${ticker}`,
         `${ticker} Monte Carlo.png`
       );
-    } catch (err) {
+    } catch {
       setDownloadError("Export failed. Please try again.");
     } finally {
       setIsDownloading(false);

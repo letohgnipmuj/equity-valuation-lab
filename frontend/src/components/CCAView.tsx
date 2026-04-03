@@ -36,7 +36,7 @@ export function CCAView({
         `${API_BASE_URL}/api/exports/cca/${ticker}`,
         `${ticker} CCA.xlsx`
       );
-    } catch (err) {
+    } catch {
       setDownloadError("Export failed. Please try again.");
     } finally {
       setIsDownloading(false);

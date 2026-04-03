@@ -11,35 +11,59 @@ import { ReverseDCFView } from "@/components/ReverseDCFView";
 import { LoadingDashboard } from "@/components/LoadingDashboard";
 import { Button } from "@/components/ui/button";
 import { getNearestIndex } from "@/lib/utils";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+
+type ScenarioKey = "conservative" | "base" | "optimistic";
+type ScenarioConfig = {
+  label: string;
+  dcfWaccDelta: number;
+  dcfTgrDelta: number;
+  ccaLabel: "25th percentile" | "Median" | "75th percentile";
+};
+type ScenarioOutput = {
+  label: string;
+  dcfValue?: number;
+  ccaValue?: number;
+  weightedValue?: number;
+  upside?: number;
+  waccTarget?: number;
+  tgrTarget?: number;
+  dcfWaccDelta: number;
+  dcfTgrDelta: number;
+  ccaLabel: "25th percentile" | "Median" | "75th percentile";
+};
+
+function parseScenarioKey(value: string | null): ScenarioKey | null {
+  if (value === "conservative" || value === "base" || value === "optimistic") {
+    return value;
+  }
+  return null;
+}
 
 export default function Home() {
   const { valuationData, isLoading, error } = useValuation();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [showSkeleton, setShowSkeleton] = useState(false);
   const [loadingActive, setLoadingActive] = useState(false);
   const [loadingComplete, setLoadingComplete] = useState(false);
   const [progress, setProgress] = useState(0);
   const [stepIndex, setStepIndex] = useState(0);
-  type ScenarioKey = "conservative" | "base" | "optimistic";
-  type ScenarioConfig = {
-    label: string;
-    dcfWaccDelta: number;
-    dcfTgrDelta: number;
-    ccaLabel: "25th percentile" | "Median" | "75th percentile";
-  };
-  type ScenarioOutput = {
-    label: string;
-    dcfValue?: number;
-    ccaValue?: number;
-    weightedValue?: number;
-    upside?: number;
-    waccTarget?: number;
-    tgrTarget?: number;
-    dcfWaccDelta: number;
-    dcfTgrDelta: number;
-    ccaLabel: "25th percentile" | "Median" | "75th percentile";
-  };
 
-  const [scenario, setScenario] = useState<ScenarioKey>("base");
+  const scenario = parseScenarioKey(searchParams.get("scenario")) ?? "base";
+
+  const handleScenarioChange = (nextScenario: ScenarioKey) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (nextScenario === "base") {
+      params.delete("scenario");
+    } else {
+      params.set("scenario", nextScenario);
+    }
+
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  };
 
   const loadingSteps = useMemo(
     () => [
@@ -55,11 +79,15 @@ export default function Home() {
 
   useEffect(() => {
     if (isLoading && !error) {
-      setLoadingActive(true);
-      setLoadingComplete(false);
-      setShowSkeleton(false);
-      setProgress(0);
-      setStepIndex(0);
+      const initTimer = window.setTimeout(() => {
+        setLoadingActive(true);
+        setLoadingComplete(false);
+        setShowSkeleton(false);
+        setProgress(0);
+        setStepIndex(0);
+      }, 0);
+
+      return () => window.clearTimeout(initTimer);
     }
   }, [isLoading, error]);
 
@@ -88,22 +116,34 @@ export default function Home() {
 
   useEffect(() => {
     if (loadingActive && loadingComplete && !isLoading) {
-      setLoadingActive(false);
-      setShowSkeleton(false);
+      const finishTimer = window.setTimeout(() => {
+        setLoadingActive(false);
+        setShowSkeleton(false);
+      }, 0);
+
+      return () => window.clearTimeout(finishTimer);
     }
   }, [loadingActive, loadingComplete, isLoading]);
 
   useEffect(() => {
     if (loadingActive && !isLoading && valuationData) {
-      setProgress(100);
-      setLoadingComplete(true);
+      const completeTimer = window.setTimeout(() => {
+        setProgress(100);
+        setLoadingComplete(true);
+      }, 0);
+
+      return () => window.clearTimeout(completeTimer);
     }
   }, [loadingActive, isLoading, valuationData]);
 
   useEffect(() => {
     if (error) {
-      setLoadingActive(false);
-      setShowSkeleton(false);
+      const errorTimer = window.setTimeout(() => {
+        setLoadingActive(false);
+        setShowSkeleton(false);
+      }, 0);
+
+      return () => window.clearTimeout(errorTimer);
     }
   }, [error]);
 
@@ -290,7 +330,7 @@ export default function Home() {
                         type="button"
                         variant={scenario === key ? "secondary" : "outline"}
                         size="sm"
-                        onClick={() => setScenario(key)}
+                        onClick={() => handleScenarioChange(key)}
                         className="border-white/20 bg-white/5 text-white hover:bg-white/10 flex-1 sm:flex-none"
                       >
                         {scenarioOutputs[key].label}

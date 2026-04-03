@@ -21,6 +21,12 @@ interface DCFViewProps {
   scenarioImpliedPrice?: number;
 }
 
+type HeatmapValue = [number, number, number | string];
+type HeatmapDataItem =
+  | HeatmapValue
+  | { value: HeatmapValue; itemStyle: { borderColor: string; borderWidth: number } };
+type HeatmapFormatterParams = { value: HeatmapValue };
+
 export function DCFView({
   dcf,
   currentPrice,
@@ -44,7 +50,7 @@ export function DCFView({
         `${API_BASE_URL}/api/exports/dcf/${ticker}`,
         `${ticker} DCF.xlsx`
       );
-    } catch (err) {
+    } catch {
       setDownloadError("Export failed. Please try again.");
     } finally {
       setIsDownloading(false);
@@ -58,7 +64,7 @@ export function DCFView({
     const yAxisData = dcf.sensitivity.index.map((val: number) => `${(val * 100).toFixed(1)}%`); // TGR
     const xAxisData = dcf.sensitivity.columns.map((val: number) => `${(val * 100).toFixed(1)}%`); // WACC
 
-    const data: Array<[number, number, number | string] | { value: [number, number, number | string]; itemStyle: { borderColor: string; borderWidth: number } }> = [];
+    const data: HeatmapDataItem[] = [];
     let minVal = Infinity;
     let maxVal = -Infinity;
 
@@ -106,7 +112,7 @@ export function DCFView({
     return {
       tooltip: {
         position: 'top',
-        formatter: function (params: any) {
+        formatter: function (params: HeatmapFormatterParams) {
           const tgr = yAxisData[params.value[1]];
           const wacc = xAxisData[params.value[0]];
           const val = typeof params.value[2] === 'number' ? `$${params.value[2].toFixed(2)}` : 'N/A';
@@ -156,7 +162,7 @@ export function DCFView({
         data: data,
         label: {
           show: true,
-          formatter: function (p: any) {
+          formatter: function (p: HeatmapFormatterParams) {
             if (typeof p.value[2] === 'number') {
               return `$${p.value[2].toFixed(2)}`;
             }

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, { createContext, useContext, useState, ReactNode, useEffect, useRef } from "react";
 import { API_BASE_URL } from "@/lib/api";
 
 // Matches ValuationResponseModel from backend
@@ -74,34 +74,76 @@ interface ValuationContextType {
 }
 
 const ValuationContext = createContext<ValuationContextType | undefined>(undefined);
+const API_TIMEOUT_MS = Number(process.env.NEXT_PUBLIC_API_TIMEOUT_MS || 45000);
 
 export function ValuationProvider({ children }: { children: ReactNode }) {
     const [valuationData, setValuationData] = useState<ValuationData | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const activeControllerRef = useRef<AbortController | null>(null);
+    const activeRequestIdRef = useRef(0);
+
+    useEffect(() => {
+        return () => {
+            activeControllerRef.current?.abort();
+        };
+    }, []);
 
     const fetchValuation = async (ticker: string) => {
         if (!ticker) return;
-        
+
+        // Deduplicate rapid submits by aborting any active request first.
+        activeControllerRef.current?.abort();
+
+        const controller = new AbortController();
+        activeControllerRef.current = controller;
+        const requestId = ++activeRequestIdRef.current;
+        let didTimeout = false;
+        const timeoutId = window.setTimeout(() => {
+            didTimeout = true;
+            controller.abort();
+        }, API_TIMEOUT_MS);
+
         setIsLoading(true);
         setError(null);
-        
+
         try {
             // mode=1 fetches combined data
-            const res = await fetch(`${API_BASE_URL}/api/valuation/${ticker}?mode=1`);
-            
+            const res = await fetch(`${API_BASE_URL}/api/valuation/${ticker}?mode=1`, {
+                signal: controller.signal,
+            });
+
             if (!res.ok) {
                 const data = await res.json();
                 throw new Error(data.detail || "Failed to fetch valuation");
             }
-            
+
             const data: ValuationData = await res.json();
-            setValuationData(data);
-        } catch (err: any) {
-            setError(err.message || "An unexpected error occurred.");
-            setValuationData(null);
+            if (requestId === activeRequestIdRef.current) {
+                setValuationData(data);
+            }
+        } catch (err: unknown) {
+            if (controller.signal.aborted) {
+                if (didTimeout && requestId === activeRequestIdRef.current) {
+                    setError(`Request timed out after ${Math.round(API_TIMEOUT_MS / 1000)} seconds.`);
+                    setValuationData(null);
+                }
+                return;
+            }
+
+            if (requestId === activeRequestIdRef.current) {
+                const message = err instanceof Error ? err.message : "An unexpected error occurred.";
+                setError(message);
+                setValuationData(null);
+            }
         } finally {
-            setIsLoading(false);
+            window.clearTimeout(timeoutId);
+            if (activeControllerRef.current === controller) {
+                activeControllerRef.current = null;
+            }
+            if (requestId === activeRequestIdRef.current) {
+                setIsLoading(false);
+            }
         }
     };
 

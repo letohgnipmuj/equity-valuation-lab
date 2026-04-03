@@ -8,6 +8,11 @@ import os
 from dotenv import load_dotenv
 import yfinance.exceptions
 import time
+from constants import (
+    RAW_DATA_CACHE_TTL_SECONDS,
+    LOCAL_COMPANY_CACHE_TTL_SECONDS,
+    LOCAL_COMPANY_CACHE_MAX_ENTRIES,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -28,8 +33,28 @@ EQUITY_RISK_PREMIUM: float = 0.05
 RISK_FREE_RATE: float = 0.04  # Risk-free rate
 # Nominal GDP growth rate (approximate upper bound for terminal growth)
 MAX_TERMINAL_GROWTH: float = 0.045
-LOCAL_CACHE_TTL_SECONDS: int = 60
 LOCAL_COMPANY_CACHE: Dict[str, tuple[Dict[str, Any], float]] = {}
+
+
+def _prune_local_company_cache(now: float) -> None:
+    expired_symbols = [
+        symbol
+        for symbol, (_, cached_at) in LOCAL_COMPANY_CACHE.items()
+        if now - cached_at >= LOCAL_COMPANY_CACHE_TTL_SECONDS
+    ]
+    for symbol in expired_symbols:
+        LOCAL_COMPANY_CACHE.pop(symbol, None)
+
+    while len(LOCAL_COMPANY_CACHE) > LOCAL_COMPANY_CACHE_MAX_ENTRIES:
+        oldest_symbol = next(iter(LOCAL_COMPANY_CACHE))
+        LOCAL_COMPANY_CACHE.pop(oldest_symbol, None)
+
+
+def _store_local_company_data(stock: str, company_data: Dict[str, Any], now: float) -> None:
+    if stock in LOCAL_COMPANY_CACHE:
+        LOCAL_COMPANY_CACHE.pop(stock, None)
+    LOCAL_COMPANY_CACHE[stock] = (company_data, now)
+    _prune_local_company_cache(now)
 
 
 def load_company_data(stock: str, use_cache: bool = True) -> Dict[str, Any]:
@@ -41,10 +66,11 @@ def load_company_data(stock: str, use_cache: bool = True) -> Dict[str, Any]:
     cache_key = f"raw_data:{stock}"
 
     if use_cache:
+        _prune_local_company_cache(now)
         local_entry = LOCAL_COMPANY_CACHE.get(stock)
         if local_entry:
             cached_data, cached_at = local_entry
-            if now - cached_at < LOCAL_CACHE_TTL_SECONDS:
+            if now - cached_at < LOCAL_COMPANY_CACHE_TTL_SECONDS:
                 logger.debug("Using in-memory cached raw data for %s", stock)
                 return cached_data
 
@@ -68,7 +94,7 @@ def load_company_data(stock: str, use_cache: bool = True) -> Dict[str, Any]:
                     "info": cached["info"],
                     "cached": True
                 }
-                LOCAL_COMPANY_CACHE[stock] = (company_data, now)
+                _store_local_company_data(stock, company_data, now)
                 return company_data
             except Exception as e:
                 logger.warning("Error restoring cache for %s: %s", stock, e)
@@ -102,7 +128,7 @@ def load_company_data(stock: str, use_cache: bool = True) -> Dict[str, Any]:
             "balance": balance.to_json(orient="split"),
             "info": info
         }
-        set_cache(cache_key, cache_data, ttl=604800)  # Cache for 7 days
+        set_cache(cache_key, cache_data, ttl=RAW_DATA_CACHE_TTL_SECONDS)
     elif income.empty:
         logger.warning("No financial data found for %s. Will not cache empty results.", stock)
 
@@ -116,7 +142,7 @@ def load_company_data(stock: str, use_cache: bool = True) -> Dict[str, Any]:
         "cached": False
     }
 
-    LOCAL_COMPANY_CACHE[stock] = (company_data, now)
+    _store_local_company_data(stock, company_data, now)
     return company_data
 
 

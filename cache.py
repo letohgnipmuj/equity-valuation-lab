@@ -3,6 +3,7 @@ import json
 import logging
 from typing import Any, Optional
 import os
+from constants import REDIS_DEFAULT_CACHE_TTL_SECONDS
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -52,7 +53,7 @@ def get_cache(key: str) -> Optional[Any]:
     return None
 
 
-def set_cache(key: str, value: Any, ttl: int = 86400) -> bool:
+def set_cache(key: str, value: Any, ttl: int = REDIS_DEFAULT_CACHE_TTL_SECONDS) -> bool:
     if not redis_client:
         return False
     try:

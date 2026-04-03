@@ -16,6 +16,8 @@ try:
 except ModuleNotFoundError:
     from history import get_recent_valuation_history, save_valuation_to_history
 
+from constants import API_VALUATION_CACHE_TTL_SECONDS
+
 
 def load_cache():
     root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -52,11 +54,26 @@ app = FastAPI(
     version="1.0.0"
 )
 
+
+def get_allowed_origins() -> List[str]:
+    configured_origins = os.getenv("CORS_ALLOW_ORIGINS", "").strip()
+    if configured_origins:
+        if configured_origins == "*":
+            return ["*"]
+        return [origin.strip() for origin in configured_origins.split(",") if origin.strip()]
+
+    # Local development defaults
+    return ["http://localhost:3000", "http://127.0.0.1:3000"]
+
+
+allowed_origins = get_allowed_origins()
+allow_credentials = allowed_origins != ["*"]
+
 # Configure CORS for frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, set this to the Vercel URL
-    allow_credentials=True,
+    allow_origins=allowed_origins,
+    allow_credentials=allow_credentials,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -143,7 +160,7 @@ def get_valuation(ticker: str, mode: str = Query("1", description="Valuation mod
         raise HTTPException(status_code=400, detail=result["error"])
 
     # Save successful response to Redis cache
-    set_cache(cache_key, result, ttl=14400)
+    set_cache(cache_key, result, ttl=API_VALUATION_CACHE_TTL_SECONDS)
     save_valuation_to_history(result)
 
     return result

@@ -12,6 +12,7 @@ from openpyxl import load_workbook
 import difflib
 
 from cache import get_cache, set_cache
+from constants import FMP_CACHE_TTL_SECONDS
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +42,7 @@ def pull_info(statement, stock, api_key):
         if response.status_code == 200:
             data = response.json()
             if data and isinstance(data, (list, dict)):
-                set_cache(cache_key, data, ttl=86400)  # Cache for 24h
+                set_cache(cache_key, data, ttl=FMP_CACHE_TTL_SECONDS)
             return data
         else:
             logger.error("Error fetching %s: %s", statement, response.status_code)
