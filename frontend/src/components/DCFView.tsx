@@ -71,7 +71,7 @@ export function DCFView({
 
     (dcf.sensitivity as SensitivityData).data.forEach((row, yIdx: number) => {
       row.forEach((val, xIdx) => {
-        const v = typeof val === 'number' ? val : parseFloat(val);
+        const v = typeof val === 'number' ? val : (val != null ? parseFloat(val) : NaN);
         const isHighlight = highlightPoint && highlightPoint[0] === xIdx && highlightPoint[1] === yIdx;
         if (!isNaN(v)) {
           if (isHighlight) {
