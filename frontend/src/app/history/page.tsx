@@ -11,6 +11,10 @@ interface ValuationHistoryResponse {
   limit: number;
 }
 
+const HISTORY_API_TIMEOUT_MS = Number(
+  process.env.NEXT_PUBLIC_HISTORY_API_TIMEOUT_MS || 15000
+);
+
 function formatCurrency(value?: number) {
   if (value === null || value === undefined || Number.isNaN(value)) return "N/A";
   return `$${value.toFixed(2)}`;
@@ -54,6 +58,11 @@ export default function HistoryPage() {
 
   useEffect(() => {
     const controller = new AbortController();
+    let didTimeout = false;
+    const timeoutId = window.setTimeout(() => {
+      didTimeout = true;
+      controller.abort();
+    }, HISTORY_API_TIMEOUT_MS);
 
     const fetchHistory = async () => {
       try {
@@ -71,13 +80,21 @@ export default function HistoryPage() {
         const data: ValuationHistoryResponse = await res.json();
         setEntries(data.entries || []);
       } catch (err: unknown) {
-        if (err instanceof DOMException && err.name === "AbortError") return;
+        if (err instanceof DOMException && err.name === "AbortError") {
+          if (didTimeout) {
+            setError(
+              `History request timed out after ${Math.round(HISTORY_API_TIMEOUT_MS / 1000)} seconds.`
+            );
+          }
+          return;
+        }
         if (err instanceof Error) {
           setError(err.message || "Failed to load valuation history.");
         } else {
           setError("Failed to load valuation history.");
         }
       } finally {
+        window.clearTimeout(timeoutId);
         setIsLoading(false);
       }
     };

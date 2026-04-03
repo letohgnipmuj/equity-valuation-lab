@@ -15,11 +15,26 @@ REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
 REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
 REDIS_DB = int(os.getenv("REDIS_DB", 0))
 REDIS_PASSWORD = os.getenv("REDIS_PASSWORD", None)
+REDIS_SOCKET_CONNECT_TIMEOUT_SECONDS = float(
+    os.getenv("REDIS_SOCKET_CONNECT_TIMEOUT_SECONDS", "2")
+)
+REDIS_SOCKET_TIMEOUT_SECONDS = float(
+    os.getenv("REDIS_SOCKET_TIMEOUT_SECONDS", "2")
+)
+REDIS_HEALTH_CHECK_INTERVAL_SECONDS = int(
+    os.getenv("REDIS_HEALTH_CHECK_INTERVAL_SECONDS", "30")
+)
+
+REDIS_CLIENT_KWARGS = {
+    "decode_responses": True,
+    "socket_connect_timeout": REDIS_SOCKET_CONNECT_TIMEOUT_SECONDS,
+    "socket_timeout": REDIS_SOCKET_TIMEOUT_SECONDS,
+    "health_check_interval": REDIS_HEALTH_CHECK_INTERVAL_SECONDS,
+}
 
 try:
     if REDIS_URL:
-        redis_client = redis.Redis.from_url(
-            REDIS_URL, decode_responses=True, socket_connect_timeout=2)
+        redis_client = redis.Redis.from_url(REDIS_URL, **REDIS_CLIENT_KWARGS)
         # Test connection
         redis_client.ping()
         logger.info(f"Connected to Redis via URL")
@@ -29,8 +44,7 @@ try:
             port=REDIS_PORT,
             db=REDIS_DB,
             password=REDIS_PASSWORD,
-            decode_responses=True,
-            socket_connect_timeout=2
+            **REDIS_CLIENT_KWARGS,
         )
         # Test connection
         redis_client.ping()
