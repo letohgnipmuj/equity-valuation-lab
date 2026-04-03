@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { Suspense, useEffect, useMemo, useState } from "react";
 import { useValuation } from "@/contexts/ValuationContext";
 import { TickerSearch } from "@/components/TickerSearch";
 import { AlertCircle, TrendingUp, TrendingDown, Target } from "lucide-react";
@@ -40,7 +40,7 @@ function parseScenarioKey(value: string | null): ScenarioKey | null {
   return null;
 }
 
-export default function Home() {
+function HomeContent() {
   const { valuationData, isLoading, error } = useValuation();
   const router = useRouter();
   const pathname = usePathname();
@@ -385,5 +385,13 @@ export default function Home() {
         )}
       </div>
     </main>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={null}>
+      <HomeContent />
+    </Suspense>
   );
 }

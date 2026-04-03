@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 
 const nextConfig: NextConfig = {
   turbopack: {
-    root: resolve(__dirname),
+    root: resolve(__dirname, ".."),
   },
 };
 
