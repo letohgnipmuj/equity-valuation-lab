@@ -10,7 +10,7 @@ from data import (
     load_company_data,
     is_dcf_safe,
 )
-from info import build_dcf_assumptions
+from info import build_dcf_assumptions, MIN_WACC_TGR_SPREAD
 from utils import dcf_valuation, get_yf_item, fill_excel, solve_for_revenue_growth, solve_for_tgr
 from monte_carlo import run_monte_carlo_sim
 
@@ -48,12 +48,12 @@ def run_dcf_for_ticker(stock: str, mode: str = "normal", export_excel: bool = Tr
     discount_rate = assumptions["discount_rate"]
     terminal_growth = min(assumptions["terminal_growth"], MAX_TERMINAL_GROWTH)
     
-    # Enforce a minimum 2% spread between WACC and TGR to prevent degenerate valuations
-    if terminal_growth >= (discount_rate - 0.02):
+    # Enforce a minimum spread between WACC and TGR to prevent degenerate valuations
+    if terminal_growth >= (discount_rate - MIN_WACC_TGR_SPREAD):
         if not silent:
             print(f"WARNING: Spread violation detected. TGR ({terminal_growth:.2%}) is too close to or exceeds WACC ({discount_rate:.2%}).")
-            print(f"Clamping TGR to {(discount_rate - 0.02):.2%} to enforce a minimum 2% spread.")
-        terminal_growth = discount_rate - 0.02
+            print(f"Clamping TGR to {(discount_rate - MIN_WACC_TGR_SPREAD):.2%} to enforce a minimum {MIN_WACC_TGR_SPREAD:.0%} spread.")
+        terminal_growth = discount_rate - MIN_WACC_TGR_SPREAD
 
     growth_rates = assumptions["growth_rates"]
     ebit_margin = assumptions["ebit_margin"]

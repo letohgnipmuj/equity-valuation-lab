@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from utils import dcf_valuation
+from info import MIN_WACC_TGR_SPREAD
 
 def run_monte_carlo_sim(
     stock: str,
@@ -45,8 +46,8 @@ def run_monte_carlo_sim(
             sim_tgr = np.random.normal(terminal_growth, tgr_sd)
             sim_tgr = np.clip(sim_tgr, -np.inf, 0.05)
             
-            # Enforce guardrail WACC > TGR + small buffer to prevent degenerate valuations
-            if sim_wacc > sim_tgr + 0.02:
+            # Enforce guardrail WACC > TGR + minimum spread to prevent degenerate valuations
+            if sim_wacc > sim_tgr + MIN_WACC_TGR_SPREAD:
                 valid = True
                 
         # Calculate DCF

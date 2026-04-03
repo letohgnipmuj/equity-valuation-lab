@@ -2,11 +2,12 @@
 
 import React, { useMemo, useState } from "react";
 import ReactECharts from "echarts-for-react";
-import { DCFModel } from "@/contexts/ValuationContext";
+import { DCFModel, SensitivityData } from "@/contexts/ValuationContext";
 import { Button } from "@/components/ui/button";
 import { Download, Info } from "lucide-react";
 import { API_BASE_URL } from "@/lib/api";
 import { downloadFile } from "@/lib/download";
+import { getNearestIndex } from "@/lib/utils";
 
 interface DCFViewProps {
   dcf: DCFModel;
@@ -32,9 +33,11 @@ export function DCFView({
   scenarioImpliedPrice,
 }: DCFViewProps) {
   const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
 
   const handleDownload = async () => {
     if (!ticker) return;
+    setDownloadError(null);
     try {
       setIsDownloading(true);
       await downloadFile(
@@ -42,7 +45,7 @@ export function DCFView({
         `${ticker} DCF.xlsx`
       );
     } catch (err) {
-      console.error(err);
+      setDownloadError("Export failed. Please try again.");
     } finally {
       setIsDownloading(false);
     }
@@ -59,19 +62,6 @@ export function DCFView({
     let minVal = Infinity;
     let maxVal = -Infinity;
 
-    const getNearestIndex = (values: number[], target: number) => {
-      let bestIdx = 0;
-      let bestDiff = Infinity;
-      values.forEach((val, idx) => {
-        const diff = Math.abs(val - target);
-        if (diff < bestDiff) {
-          bestDiff = diff;
-          bestIdx = idx;
-        }
-      });
-      return bestIdx;
-    };
-
     let highlightPoint: [number, number] | null = null;
     if (scenarioWacc !== undefined && scenarioTgr !== undefined) {
       const tgrIndex = getNearestIndex(dcf.sensitivity.index, scenarioTgr);
@@ -79,7 +69,7 @@ export function DCFView({
       highlightPoint = [waccIndex, tgrIndex];
     }
 
-    dcf.sensitivity.data.forEach((row: any[], yIdx: number) => {
+    (dcf.sensitivity as SensitivityData).data.forEach((row, yIdx: number) => {
       row.forEach((val, xIdx) => {
         const v = typeof val === 'number' ? val : parseFloat(val);
         const isHighlight = highlightPoint && highlightPoint[0] === xIdx && highlightPoint[1] === yIdx;
@@ -192,17 +182,20 @@ export function DCFView({
             <h3 className="text-xl tracking-tight font-medium text-white/90">Discounted Cash Flow</h3>
             <p className="text-sm text-white/50 mt-1">Implied fair value based on estimated future cash flows.</p>
           </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={handleDownload}
-            disabled={isDownloading}
-            className="border-white/20 bg-white/5 text-white hover:bg-white/10 w-full sm:w-auto"
-          >
-            <Download className="w-4 h-4" />
-            {isDownloading ? "Exporting..." : "Export DCF"}
-          </Button>
+          <div className="flex flex-col items-end gap-1">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleDownload}
+              disabled={isDownloading}
+              className="border-white/20 bg-white/5 text-white hover:bg-white/10 w-full sm:w-auto"
+            >
+              <Download className="w-4 h-4" />
+              {isDownloading ? "Exporting..." : "Export DCF"}
+            </Button>
+            {downloadError && <p className="text-xs text-red-400">{downloadError}</p>}
+          </div>
         </div>
 
         <div className="glass p-5 sm:p-6 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-white/5">

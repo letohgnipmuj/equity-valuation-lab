@@ -1,3 +1,4 @@
+import logging
 import numpy as np
 import pandas as pd
 from typing import Dict, Any
@@ -10,6 +11,11 @@ from utils import (
     revenue_growth_schedule,
     get_ebit_margin,
 )
+
+logger = logging.getLogger(__name__)
+
+# Minimum required spread between WACC and TGR to prevent degenerate valuations
+MIN_WACC_TGR_SPREAD: float = 0.02
 
 """
 High‑level construction of DCF inputs/assumptions.
@@ -144,7 +150,7 @@ def build_dcf_assumptions(
     estimates_raw = pull_info("analyst-estimates", stock, api_key)
 
     if estimates_raw is None:
-        print("No analyst estimates available.")
+        logger.warning("No analyst estimates available for %s", stock)
         estimates = pd.DataFrame()
     else:
         estimates = pd.DataFrame(estimates_raw)
@@ -163,8 +169,8 @@ def build_dcf_assumptions(
     )
 
     # Basic economic sanity check: Ensure positive denominator for Gordon Growth
-    # Also enforce a minimum spread of 2% to prevent degenerate/explosive valuations
-    discount_rate = max(discount_rate, terminal_growth + 0.02)
+    # Also enforce a minimum spread to prevent degenerate/explosive valuations
+    discount_rate = max(discount_rate, terminal_growth + MIN_WACC_TGR_SPREAD)
 
     # Return as dict for easy access
 

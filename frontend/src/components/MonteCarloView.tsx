@@ -15,9 +15,11 @@ interface MonteCarloViewProps {
 
 export function MonteCarloView({ monteCarlo, currentPrice, ticker }: MonteCarloViewProps) {
   const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
 
   const handleDownload = async () => {
     if (!ticker) return;
+    setDownloadError(null);
     try {
       setIsDownloading(true);
       await downloadFile(
@@ -25,18 +27,18 @@ export function MonteCarloView({ monteCarlo, currentPrice, ticker }: MonteCarloV
         `${ticker} Monte Carlo.png`
       );
     } catch (err) {
-      console.error(err);
+      setDownloadError("Export failed. Please try again.");
     } finally {
       setIsDownloading(false);
     }
   };
 
   // Safe fallbacks
-  const median = monteCarlo.median || 0;
-  const p25 = monteCarlo.range?.[0] || 0;
-  const p75 = monteCarlo.range?.[1] || 0;
+  const median = monteCarlo.median ?? 0;
+  const p25 = monteCarlo.range?.[0] ?? 0;
+  const p75 = monteCarlo.range?.[1] ?? 0;
 
-  if (median === 0 || isNaN(median)) {
+  if (median == null || isNaN(median)) {
     return (
       <div className="glass p-5 sm:p-6 md:p-8 rounded-2xl border-white/5 w-full flex items-center justify-center min-h-[300px] text-white/50">
         <p>Monte Carlo simulation data unavailable.</p>
@@ -67,17 +69,20 @@ export function MonteCarloView({ monteCarlo, currentPrice, ticker }: MonteCarloV
           </div>
           <p className="text-sm text-white/50">5,000 randomized iterations of DCF assumptions.</p>
         </div>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={handleDownload}
-          disabled={isDownloading}
-          className="border-white/20 bg-white/5 text-white hover:bg-white/10 w-full sm:w-auto"
-        >
-          <Download className="w-4 h-4" />
-          {isDownloading ? "Exporting..." : "Export PNG"}
-        </Button>
+        <div className="flex flex-col items-end gap-1">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleDownload}
+            disabled={isDownloading}
+            className="border-white/20 bg-white/5 text-white hover:bg-white/10 w-full sm:w-auto"
+          >
+            <Download className="w-4 h-4" />
+            {isDownloading ? "Exporting..." : "Export PNG"}
+          </Button>
+          {downloadError && <p className="text-xs text-red-400">{downloadError}</p>}
+        </div>
       </div>
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 my-6 md:my-8">

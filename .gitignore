@@ -12,3 +12,6 @@ __pycache__/
 *.png
 
 node_modules/
+
+agents.md
+claude.md

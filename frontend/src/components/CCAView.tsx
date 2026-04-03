@@ -25,9 +25,11 @@ export function CCAView({
   scenarioPercentileLabel,
 }: CCAViewProps) {
   const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
 
   const handleDownload = async () => {
     if (!ticker) return;
+    setDownloadError(null);
     try {
       setIsDownloading(true);
       await downloadFile(
@@ -35,7 +37,7 @@ export function CCAView({
         `${ticker} CCA.xlsx`
       );
     } catch (err) {
-      console.error(err);
+      setDownloadError("Export failed. Please try again.");
     } finally {
       setIsDownloading(false);
     }
@@ -63,17 +65,20 @@ export function CCAView({
           <h3 className="text-xl tracking-tight font-medium text-white/90">Comparable Company Analysis</h3>
           <p className="text-sm text-white/50 mt-1">Valuation implied by industry peer multiples.</p>
         </div>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={handleDownload}
-          disabled={isDownloading}
-          className="border-white/20 bg-white/5 text-white hover:bg-white/10 w-full sm:w-auto"
-        >
-          <Download className="w-4 h-4" />
-          {isDownloading ? "Exporting..." : "Export CCA"}
-        </Button>
+        <div className="flex flex-col items-end gap-1">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleDownload}
+            disabled={isDownloading}
+            className="border-white/20 bg-white/5 text-white hover:bg-white/10 w-full sm:w-auto"
+          >
+            <Download className="w-4 h-4" />
+            {isDownloading ? "Exporting..." : "Export CCA"}
+          </Button>
+          {downloadError && <p className="text-xs text-red-400">{downloadError}</p>}
+        </div>
       </div>
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 md:mb-12">

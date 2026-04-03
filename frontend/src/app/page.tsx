@@ -10,6 +10,7 @@ import { MonteCarloView } from "@/components/MonteCarloView";
 import { ReverseDCFView } from "@/components/ReverseDCFView";
 import { LoadingDashboard } from "@/components/LoadingDashboard";
 import { Button } from "@/components/ui/button";
+import { getNearestIndex } from "@/lib/utils";
 
 export default function Home() {
   const { valuationData, isLoading, error } = useValuation();
@@ -141,19 +142,6 @@ export default function Home() {
     const baseWacc = dcf?.wacc;
     const baseTgr = dcf?.tgr;
 
-    const getNearestIndex = (values: number[], target: number) => {
-      let bestIdx = 0;
-      let bestDiff = Infinity;
-      values.forEach((val, idx) => {
-        const diff = Math.abs(val - target);
-        if (diff < bestDiff) {
-          bestDiff = diff;
-          bestIdx = idx;
-        }
-      });
-      return bestIdx;
-    };
-
     const getScenarioDCF = (waccTarget?: number, tgrTarget?: number) => {
       if (!dcf || waccTarget === undefined || tgrTarget === undefined) {
         return dcf?.implied_price;
@@ -218,7 +206,7 @@ export default function Home() {
           {!valuationData && (
             <div className="mb-8 md:mb-12 space-y-3 md:space-y-4">
               <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-bold tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-white/50 leading-[1.1] pb-3">
-                Probabalistic Equity<br />Valuation Engine
+                Probabilistic Equity<br />Valuation Engine
               </h2>
               <p className="text-base md:text-lg text-white/40 max-w-lg mx-auto leading-[1.25] pb10">
                 Automated DCF, Comparable Company Analysis, and Monte Carlo simulations synthesized in seconds.

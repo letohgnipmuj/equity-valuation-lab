@@ -12,20 +12,32 @@ export interface DCFAssumptions {
     tax_rate?: number;
 }
 
+export interface SensitivityData {
+    index: number[];
+    columns: number[];
+    data: (number | null)[][];
+}
+
+export interface Peer {
+    ticker?: string;
+    name?: string;
+    [key: string]: unknown;
+}
+
 export interface DCFModel {
     implied_price: number;
     current_price?: number;
     upside?: number;
     wacc?: number;
     tgr?: number;
-    sensitivity?: any;
+    sensitivity?: SensitivityData;
     assumptions?: DCFAssumptions;
 }
 
 export interface CCAModel {
     median: number;
     range: number[];
-    peers?: any[];
+    peers?: Peer[];
 }
 
 export interface MonteCarloModel {

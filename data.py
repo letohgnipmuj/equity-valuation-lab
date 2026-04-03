@@ -1,3 +1,4 @@
+import logging
 from io import StringIO
 from cache import get_cache, set_cache
 import yfinance as yf
@@ -7,6 +8,8 @@ import os
 from dotenv import load_dotenv
 import yfinance.exceptions
 import time
+
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 
@@ -42,7 +45,7 @@ def load_company_data(stock: str, use_cache: bool = True) -> Dict[str, Any]:
         if local_entry:
             cached_data, cached_at = local_entry
             if now - cached_at < LOCAL_CACHE_TTL_SECONDS:
-                print(f"Using in-memory cached raw data for {stock}")
+                logger.debug("Using in-memory cached raw data for %s", stock)
                 return cached_data
 
     if use_cache:
@@ -55,7 +58,7 @@ def load_company_data(stock: str, use_cache: bool = True) -> Dict[str, Any]:
                     StringIO(cached["cashflow"]), orient="split")
                 balance = pd.read_json(
                     StringIO(cached["balance"]), orient="split")
-                print(f"Using cached raw financial data for {stock}")
+                logger.debug("Using cached raw financial data for %s", stock)
                 company_data = {
                     "stock": stock,
                     "ticker": yf.Ticker(stock),
@@ -68,10 +71,10 @@ def load_company_data(stock: str, use_cache: bool = True) -> Dict[str, Any]:
                 LOCAL_COMPANY_CACHE[stock] = (company_data, now)
                 return company_data
             except Exception as e:
-                print(f"Error restoring cache for {stock}: {e}")
+                logger.warning("Error restoring cache for %s: %s", stock, e)
 
     # Not in cache or cache error
-    print(f"Fetching fresh raw financial data for {stock} from yfinance...")
+    logger.info("Fetching fresh raw financial data for %s from yfinance", stock)
 
     max_retries = 3
     for attempt in range(max_retries):
@@ -85,11 +88,10 @@ def load_company_data(stock: str, use_cache: bool = True) -> Dict[str, Any]:
         except yfinance.exceptions.YFRateLimitError as e:
             if attempt < max_retries - 1:
                 wait_time = 2 ** attempt  # Exponential backoff: 1, 2, 4 seconds
-                print(
-                    f"Rate limited, retrying in {wait_time} seconds... ({attempt + 1}/{max_retries})")
+                logger.warning("Rate limited, retrying in %s seconds... (%s/%s)", wait_time, attempt + 1, max_retries)
                 time.sleep(wait_time)
             else:
-                print(f"Rate limit error after {max_retries} attempts: {e}")
+                logger.error("Rate limit error after %s attempts: %s", max_retries, e)
                 raise e
 
     # Save to cache if data was actually found
@@ -102,8 +104,7 @@ def load_company_data(stock: str, use_cache: bool = True) -> Dict[str, Any]:
         }
         set_cache(cache_key, cache_data, ttl=604800)  # Cache for 7 days
     elif income.empty:
-        print(
-            f"Warning: No financial data found for {stock}. Will not cache empty results.")
+        logger.warning("No financial data found for %s. Will not cache empty results.", stock)
 
     company_data = {
         "stock": stock,
@@ -133,12 +134,10 @@ def is_dcf_safe(stock: str, income: pd.DataFrame = None) -> bool:
             except yfinance.exceptions.YFRateLimitError as e:
                 if attempt < max_retries - 1:
                     wait_time = 2 ** attempt
-                    print(
-                        f"Rate limited in is_dcf_safe, retrying in {wait_time} seconds... ({attempt + 1}/{max_retries})")
+                    logger.warning("Rate limited in is_dcf_safe, retrying in %s seconds... (%s/%s)", wait_time, attempt + 1, max_retries)
                     time.sleep(wait_time)
                 else:
-                    print(
-                        f"Rate limit error in is_dcf_safe after {max_retries} attempts: {e}")
+                    logger.error("Rate limit error in is_dcf_safe after %s attempts: %s", max_retries, e)
                     raise e
 
         country = info.get("country")
@@ -174,5 +173,5 @@ def is_dcf_safe(stock: str, income: pd.DataFrame = None) -> bool:
         return True
 
     except Exception as exc:
-        print(f"Error while checking DCF suitability: {exc}")
+        logger.warning("Error while checking DCF suitability: %s", exc)
         return False

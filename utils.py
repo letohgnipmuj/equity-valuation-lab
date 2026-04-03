@@ -1,3 +1,4 @@
+import logging
 import os
 import shutil
 from datetime import datetime
@@ -11,6 +12,8 @@ from openpyxl import load_workbook
 import difflib
 
 from cache import get_cache, set_cache
+
+logger = logging.getLogger(__name__)
 
 
 def pull_info(statement, stock, api_key):
@@ -41,10 +44,10 @@ def pull_info(statement, stock, api_key):
                 set_cache(cache_key, data, ttl=86400)  # Cache for 24h
             return data
         else:
-            print(f"Error fetching {statement}: {response.status_code}")
+            logger.error("Error fetching %s: %s", statement, response.status_code)
             return None
     except Exception as e:
-        print(f"Network error while fetching {statement}: {e}")
+        logger.error("Network error while fetching %s: %s", statement, e)
         return None
 
 
@@ -132,7 +135,7 @@ def get_yf_item(statement_df: pd.DataFrame, item_name: str, cutoff: float = 0.6)
             if term.lower() in index_item.lower():
                 return statement_df.loc[index_item]
 
-    print(f"Could not find any data for '{item_name}'")
+    logger.warning("Could not find any data for '%s'", item_name)
     return None
 
 
