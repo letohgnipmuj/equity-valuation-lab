@@ -125,7 +125,7 @@ export function ValuationProvider({ children }: { children: ReactNode }) {
         } catch (err: unknown) {
             if (controller.signal.aborted) {
                 if (didTimeout && requestId === activeRequestIdRef.current) {
-                    setError(`Request timed out after ${Math.round(API_TIMEOUT_MS / 1000)} seconds.`);
+                    setError(`Request timed out after ${Math.round(API_TIMEOUT_MS / 1000)} seconds. Please try again later or check the history page.`);
                     setValuationData(null);
                 }
                 return;
