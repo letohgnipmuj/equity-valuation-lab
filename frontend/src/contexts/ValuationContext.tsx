@@ -76,7 +76,7 @@ interface ValuationContextType {
 }
 
 const ValuationContext = createContext<ValuationContextType | undefined>(undefined);
-const API_TIMEOUT_MS = Number(process.env.NEXT_PUBLIC_API_TIMEOUT_MS || 20000);  // Reduced from 45s to 20s
+const API_TIMEOUT_MS = Number(process.env.NEXT_PUBLIC_API_TIMEOUT_MS || 45000);  // 45s timeout
 const POLL_INTERVAL_MS = Number(process.env.NEXT_PUBLIC_POLL_INTERVAL_MS || 3000);  // Poll every 3s
 const MAX_POLL_ATTEMPTS = Number(process.env.NEXT_PUBLIC_MAX_POLL_ATTEMPTS || 300);  // Max 15 minutes
 
