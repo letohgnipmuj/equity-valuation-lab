@@ -1,4 +1,3 @@
-from constants import API_VALUATION_CACHE_TTL_SECONDS
 import importlib.util
 import sys
 import os
@@ -11,6 +10,8 @@ from pydantic import BaseModel
 
 # Add parent directory to path to import existing valuation modules
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from constants import API_VALUATION_CACHE_TTL_SECONDS
 
 # Now import from parent directory
 
