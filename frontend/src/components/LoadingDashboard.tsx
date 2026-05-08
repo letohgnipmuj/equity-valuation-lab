@@ -5,9 +5,11 @@ import React from "react";
 interface LoadingDashboardProps {
   progress: number;
   stepText: string;
+  isPolling?: boolean;
+  pollAttempt?: number;
 }
 
-export function LoadingDashboard({ progress, stepText }: LoadingDashboardProps) {
+export function LoadingDashboard({ progress, stepText, isPolling = false, pollAttempt = 0 }: LoadingDashboardProps) {
   return (
     <div className="w-full flex flex-col gap-6 md:gap-8 animate-in fade-in slide-in-from-bottom-8 duration-700">
       <div className="glass-card p-5 sm:p-6 md:p-8 flex flex-col gap-6">
@@ -39,7 +41,9 @@ export function LoadingDashboard({ progress, stepText }: LoadingDashboardProps) 
               style={{ width: `${Math.max(2, Math.min(100, progress))}%` }}
             />
           </div>
-          <p className="text-[11px] text-white/40 mt-2">{stepText}</p>
+          <p className="text-[11px] text-white/40 mt-2">
+            {isPolling ? `Checking result... [attempt ${pollAttempt}]` : stepText}
+          </p>
         </div>
       </div>
 

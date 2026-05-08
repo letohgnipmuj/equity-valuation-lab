@@ -25,3 +25,9 @@ LOCAL_COMPANY_CACHE_TTL_SECONDS = int(
 LOCAL_COMPANY_CACHE_MAX_ENTRIES = int(
     os.getenv("LOCAL_COMPANY_CACHE_MAX_ENTRIES", "256")
 )
+
+# API timeout configuration (seconds)
+# Backend synchronous execution timeout before switching to async job processing
+API_SYNC_TIMEOUT_SECONDS = int(
+    os.getenv("API_SYNC_TIMEOUT_SECONDS", "20")
+)

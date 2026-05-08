@@ -41,7 +41,7 @@ function parseScenarioKey(value: string | null): ScenarioKey | null {
 }
 
 function HomeContent() {
-  const { valuationData, isLoading, error } = useValuation();
+  const { valuationData, isLoading, error, isPolling, pollProgress } = useValuation();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -266,7 +266,7 @@ function HomeContent() {
 
         {/* Valuation Results Dashboard Scaffold */}
         {loadingActive && showSkeleton && (
-          <LoadingDashboard progress={progress} stepText={loadingSteps[stepIndex]} />
+          <LoadingDashboard progress={progress} stepText={loadingSteps[stepIndex]} isPolling={isPolling} pollAttempt={pollProgress} />
         )}
 
         {showResults && valuationData && (

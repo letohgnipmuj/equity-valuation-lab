@@ -2,9 +2,11 @@ import yfinance as yf
 import pandas as pd
 import numpy as np
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dcf import run_dcf_for_ticker
 from cca import run_cca
 from data import load_company_data
+
 
 def run_valuation_orchestrator(ticker_symbol: str, mode: str = "1"):
     ticker_symbol = ticker_symbol.upper()
@@ -16,14 +18,20 @@ def run_valuation_orchestrator(ticker_symbol: str, mode: str = "1"):
 
         if mode == "1":
             print(f"COMBINED VALUATION: {short_name}")
-            dcf_price = run_dcf_for_ticker(ticker_symbol, mode="normal", export_excel=True, silent=True)
-            cca_med, cca_25, cca_75 = run_cca(ticker_symbol, export_excel=True, silent=True)
-            mc_med, mc_25, mc_75 = run_dcf_for_ticker(ticker_symbol, mode="monte_carlo", export_excel=True, silent=True)
-            implied_rev_growth = run_dcf_for_ticker(ticker_symbol, mode="reverse_growth", silent=True)
-            implied_tgr = run_dcf_for_ticker(ticker_symbol, mode="reverse_tgr", silent=True)
+            dcf_price = run_dcf_for_ticker(
+                ticker_symbol, mode="normal", export_excel=True, silent=True)
+            cca_med, cca_25, cca_75 = run_cca(
+                ticker_symbol, export_excel=True, silent=True)
+            mc_med, mc_25, mc_75 = run_dcf_for_ticker(
+                ticker_symbol, mode="monte_carlo", export_excel=True, silent=True)
+            implied_rev_growth = run_dcf_for_ticker(
+                ticker_symbol, mode="reverse_growth", silent=True)
+            implied_tgr = run_dcf_for_ticker(
+                ticker_symbol, mode="reverse_tgr", silent=True)
 
             weighted_price = (dcf_price * 0.55) + (cca_med * 0.45)
-            upside = (weighted_price / current_price - 1) * 100 if current_price else 0
+            upside = (weighted_price / current_price - 1) * \
+                100 if current_price else 0
 
             print(f"DCF Implied Value:      ${dcf_price:,.2f}")
             print(f"CCA Implied Value:      ${cca_med:,.2f}")
@@ -35,95 +43,145 @@ def run_valuation_orchestrator(ticker_symbol: str, mode: str = "1"):
             print(f"MONTE CARLO MEDIAN:     ${mc_med:,.2f}")
             print(f"MC 25th-75th RANGE:     ${mc_25:,.2f} - ${mc_75:,.2f}")
             print(f"------------------------------------------")
-            
+
             if isinstance(implied_rev_growth, (float, int)) and not np.isnan(implied_rev_growth) and implied_rev_growth != -999:
-                print(f"MARKET IMPLIED REV GROWTH: {implied_rev_growth*100:,.2f}%")
+                print(
+                    f"MARKET IMPLIED REV GROWTH: {implied_rev_growth*100:,.2f}%")
             else:
                 print(f"MARKET IMPLIED REV GROWTH: ERR")
-                
+
             if isinstance(implied_tgr, (float, int)) and not np.isnan(implied_tgr):
                 print(f"MARKET IMPLIED TGR:        {implied_tgr*100:,.2f}%")
             else:
                 print(f"MARKET IMPLIED TGR:        ERR")
-            
+
             print(f"\n" + "-"*40)
-            if upside > 15: print("Recommendation: BUY")
-            elif upside < -10: print("Recommendation: SELL")
-            else: print("Recommendation: HOLD")
+            if upside > 15:
+                print("Recommendation: BUY")
+            elif upside < -10:
+                print("Recommendation: SELL")
+            else:
+                print("Recommendation: HOLD")
             print("="*40 + "\n")
-        elif mode == "2": run_dcf_for_ticker(ticker_symbol, mode="normal", silent=False)
-        elif mode == "3": run_cca(ticker_symbol, silent=False)
+        elif mode == "2":
+            run_dcf_for_ticker(ticker_symbol, mode="normal", silent=False)
+        elif mode == "3":
+            run_cca(ticker_symbol, silent=False)
         elif mode == "4":
             print(f"\n>>> Running Reverse DCF Models for {short_name}...")
-            run_dcf_for_ticker(ticker_symbol, mode="reverse_growth", silent=False)
+            run_dcf_for_ticker(
+                ticker_symbol, mode="reverse_growth", silent=False)
             run_dcf_for_ticker(ticker_symbol, mode="reverse_tgr", silent=False)
-        elif mode == "5": run_dcf_for_ticker(ticker_symbol, mode="monte_carlo", silent=False)
+        elif mode == "5":
+            run_dcf_for_ticker(ticker_symbol, mode="monte_carlo", silent=False)
     except Exception as e:
         print(f"Error: {e}")
+
 
 def run_valuation_orchestrator_json(ticker_symbol: str, mode: str = "1"):
     ticker_symbol = ticker_symbol.upper()
     try:
+        start_time = time.time()
         company = load_company_data(ticker_symbol)
         info = company.get("info", {})
         current_price = info.get("currentPrice")
         short_name = (info.get("shortName") or ticker_symbol).upper()
 
         if mode == "1":
-            # 1. Run DCF (API Mode)
-            dcf_data = run_dcf_for_ticker(ticker_symbol, mode="normal", export_excel=False, silent=True, return_full_data=True)
-            cca_med, cca_25, cca_75 = run_cca(ticker_symbol, export_excel=False, silent=True)
-            mc_med, mc_25, mc_75 = run_dcf_for_ticker(ticker_symbol, mode="monte_carlo", export_excel=False, silent=True)
-            implied_rev_growth = run_dcf_for_ticker(ticker_symbol, mode="reverse_growth", silent=True)
-            implied_tgr = run_dcf_for_ticker(ticker_symbol, mode="reverse_tgr", silent=True)
-            weighted_price = (dcf_data["implied_price"] * 0.55) + (cca_med * 0.45)
+            # Parallel execution: DCF (normal), CCA, and Monte Carlo run concurrently
+            with ThreadPoolExecutor(max_workers=3) as executor:
+                dcf_future = executor.submit(
+                    run_dcf_for_ticker, ticker_symbol,
+                    mode="normal", export_excel=False, silent=True, return_full_data=True
+                )
+                cca_future = executor.submit(
+                    run_cca, ticker_symbol,
+                    export_excel=False, silent=True
+                )
+                mc_future = executor.submit(
+                    run_dcf_for_ticker, ticker_symbol,
+                    mode="monte_carlo", export_excel=False, silent=True
+                )
+
+                # Wait for all three to complete and collect results
+                dcf_data = dcf_future.result()
+                cca_med, cca_25, cca_75 = cca_future.result()
+                mc_med, mc_25, mc_75 = mc_future.result()
+
+            # Reverse calculations (sequential, lower priority)
+            implied_rev_growth = run_dcf_for_ticker(
+                ticker_symbol, mode="reverse_growth", silent=True)
+            implied_tgr = run_dcf_for_ticker(
+                ticker_symbol, mode="reverse_tgr", silent=True)
+            weighted_price = (dcf_data["implied_price"]
+                              * 0.55) + (cca_med * 0.45)
+
+            elapsed_time = time.time() - start_time
+            print(f"[PERF] Mode 1 valuation completed in {elapsed_time:.2f}s")
         elif mode == "2":
-            dcf_data = run_dcf_for_ticker(ticker_symbol, mode="normal", export_excel=False, silent=True, return_full_data=True)
+            dcf_data = run_dcf_for_ticker(
+                ticker_symbol, mode="normal", export_excel=False, silent=True, return_full_data=True)
             cca_med, cca_25, cca_75 = 0, 0, 0
             mc_med, mc_25, mc_75 = 0, 0, 0
             implied_rev_growth, implied_tgr = 0, 0
             weighted_price = dcf_data["implied_price"]
+            elapsed_time = time.time() - start_time
+            print(f"[PERF] Mode 2 (DCF only) completed in {elapsed_time:.2f}s")
         elif mode == "3":
             dcf_data = {
-                "implied_price": 0, 
+                "implied_price": 0,
                 "wacc": 0, "tgr": 0,
                 "sensitivity": {"index": [0], "columns": [0], "data": [[0]]},
                 "assumptions": {"ebit_margin": [0], "tax_rate": 0, "wacc": 0, "tgr": 0, "revenue_growth": [0]}
             }
-            cca_med, cca_25, cca_75 = run_cca(ticker_symbol, export_excel=False, silent=True)
+            cca_med, cca_25, cca_75 = run_cca(
+                ticker_symbol, export_excel=False, silent=True)
             mc_med, mc_25, mc_75 = 0, 0, 0
             implied_rev_growth, implied_tgr = 0, 0
             weighted_price = cca_med
+            elapsed_time = time.time() - start_time
+            print(f"[PERF] Mode 3 (CCA only) completed in {elapsed_time:.2f}s")
         elif mode == "4":
             dcf_data = {
-                "implied_price": 0, 
+                "implied_price": 0,
                 "wacc": 0, "tgr": 0,
                 "sensitivity": {"index": [0], "columns": [0], "data": [[0]]},
                 "assumptions": {"ebit_margin": [0], "tax_rate": 0, "wacc": 0, "tgr": 0, "revenue_growth": [0]}
             }
             cca_med, cca_25, cca_75 = 0, 0, 0
             mc_med, mc_25, mc_75 = 0, 0, 0
-            implied_rev_growth = run_dcf_for_ticker(ticker_symbol, mode="reverse_growth", silent=True)
-            implied_tgr = run_dcf_for_ticker(ticker_symbol, mode="reverse_tgr", silent=True)
+            implied_rev_growth = run_dcf_for_ticker(
+                ticker_symbol, mode="reverse_growth", silent=True)
+            implied_tgr = run_dcf_for_ticker(
+                ticker_symbol, mode="reverse_tgr", silent=True)
             weighted_price = current_price
+            elapsed_time = time.time() - start_time
+            print(f"[PERF] Mode 4 (Reverse) completed in {elapsed_time:.2f}s")
         elif mode == "5":
             dcf_data = {
-                "implied_price": 0, 
+                "implied_price": 0,
                 "wacc": 0, "tgr": 0,
                 "sensitivity": {"index": [0], "columns": [0], "data": [[0]]},
                 "assumptions": {"ebit_margin": [0], "tax_rate": 0, "wacc": 0, "tgr": 0, "revenue_growth": [0]}
             }
             cca_med, cca_25, cca_75 = 0, 0, 0
-            mc_med, mc_25, mc_75 = run_dcf_for_ticker(ticker_symbol, mode="monte_carlo", export_excel=False, silent=True)
+            mc_med, mc_25, mc_75 = run_dcf_for_ticker(
+                ticker_symbol, mode="monte_carlo", export_excel=False, silent=True)
             implied_rev_growth, implied_tgr = 0, 0
             weighted_price = mc_med
+            elapsed_time = time.time() - start_time
+            print(
+                f"[PERF] Mode 5 (Monte Carlo) completed in {elapsed_time:.2f}s")
         else:
             return {"error": f"Mode {mode} not supported"}
 
-        upside = (weighted_price / current_price - 1) * 100 if current_price else 0
+        upside = (weighted_price / current_price - 1) * \
+            100 if current_price else 0
         recommendation = "HOLD"
-        if upside > 15: recommendation = "BUY"
-        elif upside < -10: recommendation = "SELL"
+        if upside > 15:
+            recommendation = "BUY"
+        elif upside < -10:
+            recommendation = "SELL"
 
         return {
             "ticker": ticker_symbol,
@@ -159,8 +217,9 @@ if __name__ == "__main__":
     print("3: CCA Valuation (Comparable Companies)")
     print("4: Reverse DCF (Solving for Market Expectations)")
     print("5: Monte Carlo Simulation")
-    
+
     mode_input = input("Enter choice (1-5) [default: 1]: ").strip()
-    if not mode_input: mode_input = "1"
-    
+    if not mode_input:
+        mode_input = "1"
+
     run_valuation_orchestrator(ticker, mode_input)
