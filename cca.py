@@ -29,7 +29,7 @@ def find_peers(ticker_symbol, sector, industry, target_ev=None, universe_path=No
 
     # Try Industry Filter
     candidates = [c for c in peers if c.get("industry") == industry]
-    
+
     # Fallback to Sector if industry is too small
     if len(candidates) < 6:
         candidates = [c for c in peers if c.get("sector") == sector]
@@ -41,102 +41,118 @@ def find_peers(ticker_symbol, sector, industry, target_ev=None, universe_path=No
             if c_ev == 0 or target_ev == 0:
                 return float('inf')
             return abs(c_ev - target_ev) / target_ev
-            
+
         candidates.sort(key=size_proximity)
 
     # Return top 'num_peers' candidates (e.g., top 15-20)
     return [c["ticker"] for c in candidates[:num_peers]]
 
 
-def get_peer_stats(tickers, fast_mode=False):
+def _fetch_peer_stats(t, fast_mode=False):
+    """Helper function to fetch stats for a single peer (used for parallelization)."""
     from data import API_KEY
     from utils import pull_info
 
-    peer_results = []
-    for t in tickers:
-        try:
-            company_data = load_company_data(t)
-            y_info = company_data.get("info", {})
-            if not y_info:
-                continue
+    try:
+        company_data = load_company_data(t)
+        y_info = company_data.get("info", {})
+        if not y_info:
+            return None
 
-            # Initialize metrics
-            revenue = None
-            ebitda = None
-            net_income = None
+        # Initialize metrics
+        revenue = None
+        ebitda = None
+        net_income = None
 
-            if fast_mode:
-                # Screening mode: Use only yf info for speed
-                revenue = y_info.get("totalRevenue")
-                ebitda = y_info.get("ebitda")
-                net_income = y_info.get("netIncome")
-            else:
-                # Valuation mode: Full fallback chain for accuracy. Favor TTM (info) for multiples consistency.
-                revenue = y_info.get("totalRevenue")
-                ebitda = y_info.get("ebitda")
-                net_income = y_info.get("netIncome") or y_info.get("netIncomeToCommon")
+        if fast_mode:
+            # Screening mode: Use only yf info for speed
+            revenue = y_info.get("totalRevenue")
+            ebitda = y_info.get("ebitda")
+            net_income = y_info.get("netIncome")
+        else:
+            # Valuation mode: Full fallback chain for accuracy. Favor TTM (info) for multiples consistency.
+            revenue = y_info.get("totalRevenue")
+            ebitda = y_info.get("ebitda")
+            net_income = y_info.get(
+                "netIncome") or y_info.get("netIncomeToCommon")
 
-                income = company_data.get("income")
-                if income is not None and not income.empty:
+            income = company_data.get("income")
+            if income is not None and not income.empty:
+                if revenue is None:
+                    revenue = safe_iloc0(
+                        income.loc["Total Revenue"]) if "Total Revenue" in income.index else None
+                if ebitda is None:
+                    ebitda = safe_iloc0(
+                        income.loc["EBITDA"]) if "EBITDA" in income.index else None
+                if net_income is None:
+                    net_income = safe_iloc0(
+                        income.loc["Net Income"]) if "Net Income" in income.index else None
+
+            if revenue is None or ebitda is None:
+                fmp_income = pull_info("income-statement", t, API_KEY)
+                if isinstance(fmp_income, list) and len(fmp_income) > 0:
                     if revenue is None:
-                        revenue = safe_iloc0(
-                            income.loc["Total Revenue"]) if "Total Revenue" in income.index else None
+                        revenue = fmp_income[0].get("revenue")
                     if ebitda is None:
-                        ebitda = safe_iloc0(
-                            income.loc["EBITDA"]) if "EBITDA" in income.index else None
+                        ebitda = fmp_income[0].get("ebitda")
                     if net_income is None:
-                        net_income = safe_iloc0(
-                            income.loc["Net Income"]) if "Net Income" in income.index else None
+                        net_income = fmp_income[0].get("netIncome")
 
-                if revenue is None or ebitda is None:
-                    fmp_income = pull_info("income-statement", t, API_KEY)
-                    if isinstance(fmp_income, list) and len(fmp_income) > 0:
-                        if revenue is None:
-                            revenue = fmp_income[0].get("revenue")
-                        if ebitda is None:
-                            ebitda = fmp_income[0].get("ebitda")
-                        if net_income is None:
-                            net_income = fmp_income[0].get("netIncome")
+        # Common metadata/ratios
+        pe = y_info.get("trailingPE") or y_info.get("forwardPE")
+        peg = y_info.get("pegRatio") or y_info.get("trailingPegRatio")
+        roe = y_info.get("returnOnEquity")
+        rev_growth = y_info.get("revenueGrowth")
+        ev = y_info.get("enterpriseValue") or y_info.get("marketCap")
+        margin = (
+            ebitda / revenue) if (ebitda and revenue and revenue != 0) else None
 
-            # Common metadata/ratios
-            pe = y_info.get("trailingPE") or y_info.get("forwardPE")
-            peg = y_info.get("pegRatio") or y_info.get("trailingPegRatio")
-            roe = y_info.get("returnOnEquity")
-            rev_growth = y_info.get("revenueGrowth")
-            ev = y_info.get("enterpriseValue") or y_info.get("marketCap")
-            margin = (
-                ebitda / revenue) if (ebitda and revenue and revenue != 0) else None
+        eps_growth = None
+        if not fast_mode:
+            try:
+                fmp_growth = pull_info("financial-growth", t, API_KEY)
+                if isinstance(fmp_growth, list) and len(fmp_growth) > 0:
+                    eps_growth = fmp_growth[0].get("epsgrowth")
+            except:
+                pass
 
-            eps_growth = None
-            if not fast_mode:
-                try:
-                    fmp_growth = pull_info("financial-growth", t, API_KEY)
-                    if isinstance(fmp_growth, list) and len(fmp_growth) > 0:
-                        eps_growth = fmp_growth[0].get("epsgrowth")
-                except:
-                    pass
+        if eps_growth is None:
+            eps_growth = y_info.get("earningsGrowth")
 
-            if eps_growth is None:
-                eps_growth = y_info.get("earningsGrowth")
+        return {
+            "ticker": t,
+            "name": y_info.get("shortName") or t,
+            "price": y_info.get("currentPrice") or y_info.get("navPrice"),
+            "revenue": revenue,
+            "ebitda": ebitda,
+            "net_income": net_income,
+            "ev": ev,
+            "pe": pe or (ev / net_income if ev and net_income and net_income > 0 else None),
+            "peg": peg,
+            "eps_growth": eps_growth,
+            "rev_growth": rev_growth,
+            "margin": margin,
+            "roe": roe
+        }
+    except Exception as e:
+        # Silent during pool fetching
+        return None
 
-            peer_results.append({
-                "ticker": t,
-                "name": y_info.get("shortName") or t,
-                "price": y_info.get("currentPrice") or y_info.get("navPrice"),
-                "revenue": revenue,
-                "ebitda": ebitda,
-                "net_income": net_income,
-                "ev": ev,
-                "pe": pe or (ev / net_income if ev and net_income and net_income > 0 else None),
-                "peg": peg,
-                "eps_growth": eps_growth,
-                "rev_growth": rev_growth,
-                "margin": margin,
-                "roe": roe
-            })
-        except Exception as e:
-            # Silent during pool fetching
-            continue
+
+def get_peer_stats(tickers, fast_mode=False):
+    """Fetch peer statistics in parallel using ThreadPoolExecutor."""
+    from concurrent.futures import ThreadPoolExecutor
+
+    peer_results = []
+
+    # Parallelize peer data fetching with ThreadPoolExecutor
+    with ThreadPoolExecutor(max_workers=6) as executor:
+        futures = [executor.submit(_fetch_peer_stats, t, fast_mode)
+                   for t in tickers]
+        for future in futures:
+            result = future.result()
+            if result is not None:
+                peer_results.append(result)
 
     return peer_results
 
@@ -183,7 +199,8 @@ def run_cca(stock, export_excel: bool = True, silent: bool = False) -> tuple[flo
     if not silent:
         print(
             f"Finding peer candidates for {stock} in {industry} (Fallback: {sector})...")
-    candidate_tickers = find_peers(stock, sector, industry, target_ev=target_ev)
+    candidate_tickers = find_peers(
+        stock, sector, industry, target_ev=target_ev)
     if not candidate_tickers:
         print(f"Error: Could not find any candidates for {stock}.")
         return 0.0, 0.0, 0.0
@@ -315,7 +332,7 @@ def run_cca(stock, export_excel: bool = True, silent: bool = False) -> tuple[flo
 
     # Weighting based on Median implied prices
     weights = get_weights(implied_med)
-    
+
     final_med = np.dot(implied_med, weights)
     final_25 = np.dot(implied_25, weights)
     final_75 = np.dot(implied_75, weights)
@@ -328,16 +345,15 @@ def run_cca(stock, export_excel: bool = True, silent: bool = False) -> tuple[flo
         print(f"Base Case Implied:  ${final_med:.2f}")
         print(f"Range (25th-75th):  ${final_25:.2f} - ${final_75:.2f}")
         print(f"Current Price:      ${info.get('currentPrice', 0):.2f}")
-        
+
         if info.get('currentPrice'):
             upside = ((final_med / info.get('currentPrice')) - 1) * 100
             print(f"Implied Upside:     {upside:.1f}%\n")
 
     if export_excel:
         fill_excel_cca(stock, info, peer_data, income, API_KEY, weights)
-    
-    return float(final_med), float(final_25), float(final_75)
 
+    return float(final_med), float(final_25), float(final_75)
 
 
 if __name__ == "__main__":

@@ -108,11 +108,18 @@ def run_valuation_orchestrator_json(ticker_symbol: str, mode: str = "1"):
                 cca_med, cca_25, cca_75 = cca_future.result()
                 mc_med, mc_25, mc_75 = mc_future.result()
 
-            # Reverse calculations (sequential, lower priority)
-            implied_rev_growth = run_dcf_for_ticker(
-                ticker_symbol, mode="reverse_growth", silent=True)
-            implied_tgr = run_dcf_for_ticker(
-                ticker_symbol, mode="reverse_tgr", silent=True)
+            # Reverse calculations (parallelized)
+            with ThreadPoolExecutor(max_workers=2) as executor:
+                rev_growth_future = executor.submit(
+                    run_dcf_for_ticker, ticker_symbol,
+                    mode="reverse_growth", silent=True
+                )
+                tgr_future = executor.submit(
+                    run_dcf_for_ticker, ticker_symbol,
+                    mode="reverse_tgr", silent=True
+                )
+                implied_rev_growth = rev_growth_future.result()
+                implied_tgr = tgr_future.result()
             weighted_price = (dcf_data["implied_price"]
                               * 0.55) + (cca_med * 0.45)
 
