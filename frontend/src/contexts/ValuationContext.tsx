@@ -76,9 +76,9 @@ interface ValuationContextType {
 }
 
 const ValuationContext = createContext<ValuationContextType | undefined>(undefined);
-const API_TIMEOUT_MS = Number(process.env.NEXT_PUBLIC_API_TIMEOUT_MS || 45000);  // 45s timeout
+const API_TIMEOUT_MS = Number(process.env.NEXT_PUBLIC_API_TIMEOUT_MS || 150000);  // 2.5 min timeout
 const POLL_INTERVAL_MS = Number(process.env.NEXT_PUBLIC_POLL_INTERVAL_MS || 3000);  // Poll every 3s
-const MAX_POLL_ATTEMPTS = Number(process.env.NEXT_PUBLIC_MAX_POLL_ATTEMPTS || 300);  // Max 15 minutes
+const MAX_POLL_ATTEMPTS = Number(process.env.NEXT_PUBLIC_MAX_POLL_ATTEMPTS || 50);  // Max 2.5 minutes
 
 export function ValuationProvider({ children }: { children: ReactNode }) {
     const [valuationData, setValuationData] = useState<ValuationData | null>(null);

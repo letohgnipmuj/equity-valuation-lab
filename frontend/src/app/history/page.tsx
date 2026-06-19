@@ -12,7 +12,7 @@ interface ValuationHistoryResponse {
 }
 
 const HISTORY_API_TIMEOUT_MS = Number(
-  process.env.NEXT_PUBLIC_HISTORY_API_TIMEOUT_MS || 15000
+  process.env.NEXT_PUBLIC_HISTORY_API_TIMEOUT_MS || 90000
 );
 
 function formatCurrency(value?: number) {

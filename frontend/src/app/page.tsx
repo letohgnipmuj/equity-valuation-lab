@@ -262,6 +262,12 @@ function HomeContent() {
               <p className="text-sm font-medium">{error}</p>
             </div>
           )}
+
+          {isLoading && !error && (
+            <div className="mt-6 flex items-center justify-center text-blue-300/70 glass px-4 py-3 rounded-xl mx-auto max-w-md w-full border-blue-500/20">
+              <p className="text-sm font-medium">First request may take a moment while the API starts up...</p>
+            </div>
+          )}
         </div>
 
         {/* Valuation Results Dashboard Scaffold */}
